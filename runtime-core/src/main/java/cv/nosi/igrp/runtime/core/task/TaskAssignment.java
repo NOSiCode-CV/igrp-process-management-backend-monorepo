@@ -2,6 +2,8 @@ package cv.nosi.igrp.runtime.core.task;
 
 import java.util.List;
 import java.util.Map;
+import cv.nosi.igrp.runtime.core.task.assignment.AssignmentRule;
+import cv.nosi.igrp.runtime.core.task.assignment.AssignmentEvent;
 
 /**
  * Interface para gerenciamento de atribuições de tarefas.
@@ -135,73 +137,4 @@ public interface TaskAssignment {
      * @return lista de eventos de atribuição
      */
     List<AssignmentEvent> getAssignmentHistory(String taskId);
-    
-    /**
-     * Classe interna para representar uma regra de atribuição.
-     */
-    class AssignmentRule {
-        private String id;
-        private String taskDefinitionKey;
-        private String condition;
-        private String assigneeId;
-        private String assigneeExpression;
-        private int priority;
-        private boolean active;
-        
-        public AssignmentRule(String id, String taskDefinitionKey, String condition, 
-                             String assigneeId, int priority) {
-            this.id = id;
-            this.taskDefinitionKey = taskDefinitionKey;
-            this.condition = condition;
-            this.assigneeId = assigneeId;
-            this.priority = priority;
-            this.active = true;
-        }
-        
-        // Getters
-        public String getId() { return id; }
-        public String getTaskDefinitionKey() { return taskDefinitionKey; }
-        public String getCondition() { return condition; }
-        public String getAssigneeId() { return assigneeId; }
-        public String getAssigneeExpression() { return assigneeExpression; }
-        public int getPriority() { return priority; }
-        public boolean isActive() { return active; }
-        
-        // Setters
-        public void setCondition(String condition) { this.condition = condition; }
-        public void setAssigneeId(String assigneeId) { this.assigneeId = assigneeId; }
-        public void setAssigneeExpression(String assigneeExpression) { this.assigneeExpression = assigneeExpression; }
-        public void setPriority(int priority) { this.priority = priority; }
-        public void setActive(boolean active) { this.active = active; }
-    }
-    
-    /**
-     * Classe interna para representar um evento de atribuição.
-     */
-    class AssignmentEvent {
-        private String taskId;
-        private String userId;
-        private String previousAssignee;
-        private String type; // ASSIGN, REASSIGN, CLAIM, RELEASE
-        private String reason;
-        private long timestamp;
-        
-        public AssignmentEvent(String taskId, String userId, String previousAssignee, 
-                              String type, String reason, long timestamp) {
-            this.taskId = taskId;
-            this.userId = userId;
-            this.previousAssignee = previousAssignee;
-            this.type = type;
-            this.reason = reason;
-            this.timestamp = timestamp;
-        }
-        
-        // Getters
-        public String getTaskId() { return taskId; }
-        public String getUserId() { return userId; }
-        public String getPreviousAssignee() { return previousAssignee; }
-        public String getType() { return type; }
-        public String getReason() { return reason; }
-        public long getTimestamp() { return timestamp; }
-    }
 }

@@ -23,19 +23,19 @@
         <module>runtime-core</module>
         <module>runtime-activiti</module>
         <module>task-management</module>
-        <module>shared</module>
     </modules>
 
     <properties>
-        <java.version>23</java.version>
+        <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <igrp.encoding>UTF-8</igrp.encoding>
+        <project.build.sourceEncoding>${igrp.encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${igrp.encoding}</project.reporting.outputEncoding>
 
         <!-- Dependency versions -->
         <activiti.version>7.4.0</activiti.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
         <postgresql.version>42.7.1</postgresql.version>
     </properties>
 
@@ -63,16 +63,6 @@
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.influxdb</groupId>
-                <artifactId>influxdb-client-java</artifactId>
-                <version>${influxdb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>${redis.version}</version>
-            </dependency>
 
             <!-- Internal modules -->
             <dependency>
@@ -88,16 +78,6 @@
             <dependency>
                 <groupId>cv.nosi.igrp</groupId>
                 <artifactId>task-management</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cv.nosi.igrp</groupId>
-                <artifactId>monitoring</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cv.nosi.igrp</groupId>
-                <artifactId>shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

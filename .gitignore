@@ -24,3 +24,8 @@
 hs_err_pid*
 replay_pid*
 
+target
+runtime-activiti/target
+runtime-core/target
+task-management/target
+

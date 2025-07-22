@@ -5,6 +5,8 @@ import lombok.Getter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceInfo;
+import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceFilter;
 
 /**
  * Interface para execução de processos.
@@ -86,75 +88,5 @@ public interface ProcessExecution {
      */
     Map<String, Object> getProcessVariables(String processInstanceId) throws Exception;
 
-    /**
-     * Classe interna para representar informações de uma instância de processo.
-     */
-    @Getter
-    class ProcessInstanceInfo {
-        private final String id;
-        private final String processDefinitionId;
-        private final String processDefinitionKey;
-        private final String businessKey;
-        private final String startUserId;
-        private final long startTime;
-        private final String status;
 
-        public ProcessInstanceInfo(String id, String processDefinitionId, String processDefinitionKey, String businessKey, String startUserId, long startTime, String status) {
-            this.id = id;
-            this.processDefinitionId = processDefinitionId;
-            this.processDefinitionKey = processDefinitionKey;
-            this.businessKey = businessKey;
-            this.startUserId = startUserId;
-            this.startTime = startTime;
-            this.status = status;
-        }
-
-    }
-
-    /**
-     * Classe interna para representar critérios de filtragem de instâncias de processo.
-     */
-    @Getter
-    class ProcessInstanceFilter {
-        private String processDefinitionKey;
-        private String businessKey;
-        private String startUserId;
-        private String status;
-        private Long startedAfter;
-        private Long startedBefore;
-
-        public ProcessInstanceFilter() {
-        }
-
-        public ProcessInstanceFilter processDefinitionKey(String processDefinitionKey) {
-            this.processDefinitionKey = processDefinitionKey;
-            return this;
-        }
-
-        public ProcessInstanceFilter businessKey(String businessKey) {
-            this.businessKey = businessKey;
-            return this;
-        }
-
-        public ProcessInstanceFilter startUserId(String startUserId) {
-            this.startUserId = startUserId;
-            return this;
-        }
-
-        public ProcessInstanceFilter status(String status) {
-            this.status = status;
-            return this;
-        }
-
-        public ProcessInstanceFilter startedAfter(Long startedAfter) {
-            this.startedAfter = startedAfter;
-            return this;
-        }
-
-        public ProcessInstanceFilter startedBefore(Long startedBefore) {
-            this.startedBefore = startedBefore;
-            return this;
-        }
-
-    }
 }

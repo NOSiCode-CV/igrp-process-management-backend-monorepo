@@ -2,6 +2,8 @@ package cv.nosi.igrp.runtime.core.engine;
 
 import java.io.InputStream;
 import java.util.List;
+import cv.nosi.igrp.runtime.core.engine.deployment.DeploymentResource;
+import cv.nosi.igrp.runtime.core.engine.deployment.DeploymentInfo;
 
 /**
  * Interface para gerenciamento de deployments de processos.
@@ -55,51 +57,5 @@ public interface ProcessDeployment {
      */
     List<DeploymentInfo> getDeployments();
     
-    /**
-     * Classe interna para representar um recurso a ser deployado.
-     */
-    class DeploymentResource {
-        private String name;
-        private InputStream content;
-        
-        public DeploymentResource(String name, InputStream content) {
-            this.name = name;
-            this.content = content;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public InputStream getContent() {
-            return content;
-        }
-    }
     
-    /**
-     * Classe interna para representar informações de um deployment.
-     */
-    class DeploymentInfo {
-        private String id;
-        private String name;
-        private long deploymentTime;
-        
-        public DeploymentInfo(String id, String name, long deploymentTime) {
-            this.id = id;
-            this.name = name;
-            this.deploymentTime = deploymentTime;
-        }
-        
-        public String getId() {
-            return id;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public long getDeploymentTime() {
-            return deploymentTime;
-        }
-    }
 }

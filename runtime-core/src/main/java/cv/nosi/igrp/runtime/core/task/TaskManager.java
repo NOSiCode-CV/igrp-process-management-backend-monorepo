@@ -3,6 +3,9 @@ package cv.nosi.igrp.runtime.core.task;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import cv.nosi.igrp.runtime.core.task.model.TaskInfo;
+import cv.nosi.igrp.runtime.core.task.model.TaskComment;
+import cv.nosi.igrp.runtime.core.task.filter.TaskFilter;
 
 /**
  * Interface para gerenciamento de tarefas de processos.
@@ -92,151 +95,6 @@ public interface TaskManager {
      */
     List<TaskComment> getTaskComments(String taskId);
     
-    /**
-     * Classe interna para representar informações de uma tarefa.
-     */
-    class TaskInfo {
-        private String id;
-        private String name;
-        private String description;
-        private String processInstanceId;
-        private String taskDefinitionKey;
-        private String assignee;
-        private String owner;
-        private long createdTime;
-        private Long dueDate;
-        private String priority;
-        private String formKey;
-        
-        // Construtor, getters e setters
-        public TaskInfo(String id, String name, String processInstanceId, String taskDefinitionKey,
-                       String assignee, long createdTime) {
-            this.id = id;
-            this.name = name;
-            this.processInstanceId = processInstanceId;
-            this.taskDefinitionKey = taskDefinitionKey;
-            this.assignee = assignee;
-            this.createdTime = createdTime;
-        }
-        
-        // Getters
-        public String getId() { return id; }
-        public String getName() { return name; }
-        public String getDescription() { return description; }
-        public String getProcessInstanceId() { return processInstanceId; }
-        public String getTaskDefinitionKey() { return taskDefinitionKey; }
-        public String getAssignee() { return assignee; }
-        public String getOwner() { return owner; }
-        public long getCreatedTime() { return createdTime; }
-        public Long getDueDate() { return dueDate; }
-        public String getPriority() { return priority; }
-        public String getFormKey() { return formKey; }
-        
-        // Setters para campos opcionais
-        public void setDescription(String description) { this.description = description; }
-        public void setOwner(String owner) { this.owner = owner; }
-        public void setDueDate(Long dueDate) { this.dueDate = dueDate; }
-        public void setPriority(String priority) { this.priority = priority; }
-        public void setFormKey(String formKey) { this.formKey = formKey; }
-    }
     
-    /**
-     * Classe interna para representar um comentário de tarefa.
-     */
-    class TaskComment {
-        private String id;
-        private String taskId;
-        private String userId;
-        private String content;
-        private long createdTime;
-        
-        public TaskComment(String id, String taskId, String userId, String content, long createdTime) {
-            this.id = id;
-            this.taskId = taskId;
-            this.userId = userId;
-            this.content = content;
-            this.createdTime = createdTime;
-        }
-        
-        public String getId() { return id; }
-        public String getTaskId() { return taskId; }
-        public String getUserId() { return userId; }
-        public String getContent() { return content; }
-        public long getCreatedTime() { return createdTime; }
-    }
     
-    /**
-     * Classe interna para representar critérios de filtragem de tarefas.
-     */
-    class TaskFilter {
-        private String assignee;
-        private String processInstanceId;
-        private String taskName;
-        private String taskDefinitionKey;
-        private Boolean unassigned;
-        private Long createdAfter;
-        private Long createdBefore;
-        private Long dueDateAfter;
-        private Long dueDateBefore;
-        
-        public TaskFilter() {
-        }
-        
-        // Builder methods
-        public TaskFilter assignee(String assignee) {
-            this.assignee = assignee;
-            return this;
-        }
-        
-        public TaskFilter processInstanceId(String processInstanceId) {
-            this.processInstanceId = processInstanceId;
-            return this;
-        }
-        
-        public TaskFilter taskName(String taskName) {
-            this.taskName = taskName;
-            return this;
-        }
-        
-        public TaskFilter taskDefinitionKey(String taskDefinitionKey) {
-            this.taskDefinitionKey = taskDefinitionKey;
-            return this;
-        }
-        
-        public TaskFilter unassigned(Boolean unassigned) {
-            this.unassigned = unassigned;
-            return this;
-        }
-        
-        public TaskFilter createdAfter(Long createdAfter) {
-            this.createdAfter = createdAfter;
-            return this;
-        }
-        
-        public TaskFilter createdBefore(Long createdBefore) {
-            this.createdBefore = createdBefore;
-            return this;
-        }
-        
-        public TaskFilter dueDateAfter(Long dueDateAfter) {
-            this.dueDateAfter = dueDateAfter;
-            return this;
-        }
-        
-        public TaskFilter dueDateBefore(Long dueDateBefore) {
-            this.dueDateBefore = dueDateBefore;
-            return this;
-        }
-        
-        // Getters
-        public String getAssignee() { return assignee; }
-        public String getProcessInstanceId() { return processInstanceId; }
-        public String getTaskName() { return taskName; }
-        public String getTaskDefinitionKey() { return taskDefinitionKey; }
-        public Boolean getUnassigned() { return unassigned; }
-        public Long getCreatedAfter() { return createdAfter; }
-        public Long getCreatedBefore() { return createdBefore; }
-        public Long getDueDateAfter() { return dueDateAfter; }
-        public Long getDueDateBefore() { return dueDateBefore; }
-    }
 }
