@@ -22,7 +22,6 @@
     <modules>
         <module>runtime-core</module>
         <module>runtime-activiti</module>
-        <module>task-management</module>
     </modules>
 
     <properties>
