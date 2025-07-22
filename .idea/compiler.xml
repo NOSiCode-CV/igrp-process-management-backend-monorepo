@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="task-management" />
-        <module name="shared" />
         <module name="runtime-core" />
         <module name="runtime-activiti" />
       </profile>
@@ -17,6 +16,7 @@
       <module name="monitoring" target="17" />
       <module name="notification" target="17" />
       <module name="queue-management" target="17" />
+      <module name="shared" target="23" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

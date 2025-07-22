@@ -34,21 +34,12 @@
         <project.reporting.outputEncoding>${igrp.encoding}</project.reporting.outputEncoding>
 
         <!-- Dependency versions -->
-        <activiti.version>7.4.0</activiti.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
-        <postgresql.version>42.7.1</postgresql.version>
+        <activiti.version>8.6.0</activiti.version>
+        <postgresql.version>42.7.7</postgresql.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud -->
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
 
             <!-- Activiti -->
             <dependency>
@@ -70,16 +61,19 @@
                 <artifactId>runtime-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>cv.nosi.igrp</groupId>
                 <artifactId>runtime-activiti</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>cv.nosi.igrp</groupId>
                 <artifactId>task-management</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -114,6 +108,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>activiti-releases</id>
+            <url>https://artifacts.alfresco.com/nexus/repository/activiti-releases/</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

@@ -1,12 +1,11 @@
 package cv.nosi.igrp.runtime.core.engine;
 
-import lombok.Getter;
+import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceFilter;
+import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceInfo;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceInfo;
-import cv.nosi.igrp.runtime.core.engine.execution.ProcessInstanceFilter;
 
 /**
  * Interface para execução de processos.
@@ -49,10 +48,10 @@ public interface ProcessExecution {
      * Termina uma instância de processo em execução.
      *
      * @param processInstanceId identificador da instância
-     * @param deleteReason      motivo da terminação
+     * @param reason            motivo da terminação
      * @throws Exception se ocorrer algum erro durante a terminação
      */
-    void terminateProcess(String processInstanceId, String deleteReason) throws Exception;
+    void terminateProcess(String processInstanceId, String reason) throws Exception;
 
     /**
      * Obtém informações sobre uma instância de processo específica.
