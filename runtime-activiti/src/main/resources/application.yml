@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/activiti_test
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  
+  # Activiti configuration
+  activiti:
+    database-schema-update: true
+    history-level: full
+    db-history-used: true
+    
+logging:
+  level:
+    org.activiti: DEBUG
+    cv.nosi.igrp.runtime: DEBUG

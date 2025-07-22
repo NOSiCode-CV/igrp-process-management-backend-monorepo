@@ -1,4 +1,4 @@
-package cv.nosi.igrp.runtime.core.engine.execution;
+package cv.nosi.igrp.runtime.core.engine.model;
 
 /**
  * Classe para representar informações de uma instância de processo.
