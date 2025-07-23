@@ -11,13 +11,15 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
+
+        var userDetails = User.withUsername("admin")
+                .password("{noop}admin")
+                .roles("USER")
+                .build();
+
         var manager = new InMemoryUserDetailsManager();
-        manager.createUser(
-                User.withUsername("admin")
-                        .password("{noop}admin")
-                        .roles("USER")
-                        .build()
-        );
+        manager.createUser(userDetails);
+
         return manager;
     }
 }

@@ -10,7 +10,9 @@ spring:
     database-schema-update: true
     history-level: full
     db-history-used: true
-    
+    # database-schema:
+    deployment-name: SpringAutoDeployment
+
 logging:
   level:
     org.activiti: DEBUG
