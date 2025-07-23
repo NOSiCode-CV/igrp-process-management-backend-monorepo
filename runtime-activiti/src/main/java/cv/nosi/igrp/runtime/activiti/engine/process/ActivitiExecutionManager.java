@@ -1,9 +1,10 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
+import cv.nosi.igrp.runtime.core.engine.IGRPProcessStatus;
 import cv.nosi.igrp.runtime.core.engine.ProcessExecution;
 import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceFilter;
 import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceInfo;
-import org.activiti.api.model.shared.model.VariableInstance;
+import cv.nosi.igrp.runtime.core.engine.model.ProcessVariableInstance;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
 import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.HistoryService;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Optional.*;
 
@@ -41,15 +41,21 @@ public class ActivitiExecutionManager implements ProcessExecution {
         Objects.requireNonNull(startUserId, "startUserId cannot be null");
         Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
 
+        var payloadVariables = variables != null ? new HashMap<>(variables) : new HashMap<String, Object>();
+        payloadVariables.put(IGRP_START_USER_ID, startUserId); // TODO 22/07/2025 19:34 validate this name
+
         var payload = ProcessPayloadBuilder
                 .start()
                 .withProcessDefinitionKey(processDefinitionKey)
                 .withBusinessKey(businessKey)
-                .withVariable(IGRP_START_USER_ID, startUserId) // TODO 22/07/2025 19:34 validate this name
-                .withVariables(variables)
+                .withVariables(payloadVariables)
                 .build();
 
-        return processRuntime.start(payload).getId();
+        var processInstance = processRuntime.start(payload);
+
+        LOGGER.debug("Process instance started {}", processInstance);
+
+        return processInstance.getId();
     }
 
     @Override
@@ -101,7 +107,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
                     instance.getBusinessKey(),
                     instance.getInitiator(),
                     ofNullable(instance.getStartDate()).map(Date::getTime).orElse(0L),
-                    instance.getStatus().name()
+                    IGRPProcessStatus.valueOf(instance.getStatus().name())
             ));
 
         } catch (Exception e) {
@@ -115,9 +121,9 @@ public class ActivitiExecutionManager implements ProcessExecution {
     @Override
     public List<ProcessInstanceInfo> listProcessInstances(ProcessInstanceFilter filter) {
 
-        final var status = ofNullable(filter.getStatus()).map(String::toLowerCase).orElse("");
+        final var status = filter.getStatus();
 
-        if (status.equals("active") || status.equals("suspended") || status.isEmpty()) {
+        if (status == IGRPProcessStatus.RUNNING || status == IGRPProcessStatus.SUSPENDED) {
 
             var query = runtimeService.createProcessInstanceQuery();
 
@@ -136,11 +142,9 @@ public class ActivitiExecutionManager implements ProcessExecution {
             ofNullable(filter.getStartedBefore())
                     .ifPresent(date -> query.startedBefore(new Date(date)));
 
-            // TODO 23/07/2025 09:30 validate this string status names, see if enum is needed
-
-            if (status.equals("active"))
+            if (status == IGRPProcessStatus.RUNNING)
                 query.active();
-            else if (status.equals("suspended"))
+            else
                 query.suspended();
 
             return query.list()
@@ -152,11 +156,11 @@ public class ActivitiExecutionManager implements ProcessExecution {
                             instance.getBusinessKey(),
                             instance.getStartUserId(),
                             ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L),
-                            instance.isSuspended() ? "suspended" : "active"
+                            instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING
                     ))
                     .toList();
-
         }
+
         var query = historyService.createHistoricProcessInstanceQuery();
 
         ofNullable(filter.getProcessDefinitionKey())
@@ -174,11 +178,13 @@ public class ActivitiExecutionManager implements ProcessExecution {
         ofNullable(filter.getStartedBefore())
                 .ifPresent(date -> query.startedBefore(new Date(date)));
 
-        switch (status) {
-            case "completed" -> query.finished();
-            case "cancelled" -> query.deleted();
-            case "running" -> query.unfinished();
-        }
+        ofNullable(status).ifPresent(s -> {
+            switch (s) {
+                case COMPLETED -> query.finished();
+                case CANCELLED -> query.deleted();
+                case CREATED -> query.unfinished();
+            }
+        });
 
         return query.list()
                 .stream()
@@ -194,10 +200,11 @@ public class ActivitiExecutionManager implements ProcessExecution {
                 .toList();
     }
 
-    private String resolveStatus(HistoricProcessInstance instance) {
-        if (instance.getEndTime() != null) return "completed";
-        if (instance.getDeleteReason() != null) return "cancelled";
-        return "running";
+
+    private IGRPProcessStatus resolveStatus(HistoricProcessInstance instance) {
+        if (instance.getEndTime() != null) return IGRPProcessStatus.COMPLETED;
+        if (instance.getDeleteReason() != null) return IGRPProcessStatus.CANCELLED;
+        return IGRPProcessStatus.RUNNING;
     }
 
     @Override
@@ -213,7 +220,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
     }
 
     @Override
-    public Map<String, Object> getProcessVariables(String processInstanceId) throws Exception {
+    public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception {
 
         var payload = ProcessPayloadBuilder
                 .variables()
@@ -222,11 +229,12 @@ public class ActivitiExecutionManager implements ProcessExecution {
 
         return processRuntime.variables(payload)
                 .stream()
-                .collect(
-                        Collectors.toMap(
-                                VariableInstance::getName,
-                                VariableInstance::getValue
-                        )
-                );
+                .map(obj -> new ProcessVariableInstance(
+                        obj.getName(),
+                        obj.getType(),
+                        obj.getProcessInstanceId(),
+                        obj.getValue()
+                ))
+                .toList();
     }
 }

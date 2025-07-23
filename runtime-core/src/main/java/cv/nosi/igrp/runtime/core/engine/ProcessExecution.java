@@ -2,6 +2,7 @@ package cv.nosi.igrp.runtime.core.engine;
 
 import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceFilter;
 import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceInfo;
+import cv.nosi.igrp.runtime.core.engine.model.ProcessVariableInstance;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ public interface ProcessExecution {
     void setProcessVariables(String processInstanceId, Map<String, Object> variables) throws Exception;
 
 
-    Map<String, Object> getProcessVariables(String processInstanceId) throws Exception;
+    List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception;
 
 
 }

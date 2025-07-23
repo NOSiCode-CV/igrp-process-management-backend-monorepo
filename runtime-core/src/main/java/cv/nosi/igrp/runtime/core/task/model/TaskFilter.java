@@ -1,11 +1,15 @@
 package cv.nosi.igrp.runtime.core.task.model;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@Builder
+@Getter
+@Setter
 public class TaskFilter {
+
+    private Integer startIndex;
+
+    private Integer maxResults;
 
     private String assignee;
 
@@ -15,7 +19,7 @@ public class TaskFilter {
 
     private String taskDefinitionKey;
 
-    private Boolean unassigned;
+    private boolean unassigned;
 
     private Long createdAfter;
 
@@ -25,5 +29,5 @@ public class TaskFilter {
 
     private Long dueDateBefore;
 
-    private String status;
+    private IGRPTaskStatus status;
 }

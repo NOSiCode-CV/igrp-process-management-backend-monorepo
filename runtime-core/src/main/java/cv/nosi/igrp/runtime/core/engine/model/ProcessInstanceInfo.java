@@ -1,5 +1,7 @@
 package cv.nosi.igrp.runtime.core.engine.model;
 
+import cv.nosi.igrp.runtime.core.engine.IGRPProcessStatus;
+
 /**
  * Classe para representar informações de uma instância de processo.
  */
@@ -10,7 +12,7 @@ public record ProcessInstanceInfo(
         String businessKey,
         String startUserId,
         long startTime,
-        String status) {
+        IGRPProcessStatus status) {
     /**
      * @param id                   ID da instância de processo
      * @param processDefinitionId  ID da definição do processo

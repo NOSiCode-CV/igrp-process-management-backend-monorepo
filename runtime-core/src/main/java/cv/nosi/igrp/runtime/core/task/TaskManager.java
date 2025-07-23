@@ -2,6 +2,7 @@ package cv.nosi.igrp.runtime.core.task;
 
 import cv.nosi.igrp.runtime.core.task.model.TaskFilter;
 import cv.nosi.igrp.runtime.core.task.model.TaskInfo;
+import cv.nosi.igrp.runtime.core.task.model.TaskVariableInstance;
 
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,6 @@ public interface TaskManager {
      * @param taskId ID da tarefa
      * @return mapa com as variáveis da tarefa
      */
-    Map<String, Object> getTaskVariables(String taskId);
+    List<TaskVariableInstance> getTaskVariables(String taskId);
 
 }

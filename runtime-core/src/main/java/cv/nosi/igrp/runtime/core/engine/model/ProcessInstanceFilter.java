@@ -1,5 +1,6 @@
 package cv.nosi.igrp.runtime.core.engine.model;
 
+import cv.nosi.igrp.runtime.core.engine.IGRPProcessStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +13,7 @@ public class ProcessInstanceFilter {
     private String processDefinitionKey;
     private String businessKey;
     private String startUserId;
-    private String status;
+    private IGRPProcessStatus status;
     private Long startedAfter;
     private Long startedBefore;
 }

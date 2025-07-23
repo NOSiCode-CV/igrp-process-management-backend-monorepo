@@ -1,8 +1,10 @@
 package cv.nosi.igrp.runtime.activiti.engine.task;
 
 import cv.nosi.igrp.runtime.core.task.TaskManager;
+import cv.nosi.igrp.runtime.core.task.model.IGRPTaskStatus;
 import cv.nosi.igrp.runtime.core.task.model.TaskFilter;
 import cv.nosi.igrp.runtime.core.task.model.TaskInfo;
+import cv.nosi.igrp.runtime.core.task.model.TaskVariableInstance;
 import org.activiti.api.runtime.shared.query.Pageable;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
@@ -13,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Optional.*;
 
@@ -75,24 +76,26 @@ public class ActivitiTaskManager implements TaskManager {
     @Override
     public List<TaskInfo> listTasks(TaskFilter filter) {
 
-        var status = ofNullable(filter.getStatus())
-                .map(String::toLowerCase)
-                .orElse("");
+        final var status = filter.getStatus();
 
-        if ("completed".equals(status) || "cancelled".equals(status)) {
+        // If COMPLETED or CANCELLED, use historic task query
+        if (status == IGRPTaskStatus.COMPLETED || status == IGRPTaskStatus.CANCELLED) {
 
             var query = historyService.createHistoricTaskInstanceQuery();
 
+            // Apply filters
             ofNullable(filter.getProcessInstanceId()).ifPresent(query::processInstanceId);
             ofNullable(filter.getTaskDefinitionKey()).ifPresent(query::taskDefinitionKey);
             ofNullable(filter.getAssignee()).ifPresent(query::taskAssignee);
             ofNullable(filter.getCreatedAfter()).ifPresent(time -> query.taskCreatedAfter(new Date(time)));
             ofNullable(filter.getCreatedBefore()).ifPresent(time -> query.taskCreatedBefore(new Date(time)));
 
-            if ("completed".equals(status))
+            // Apply status
+            if (status == IGRPTaskStatus.COMPLETED) {
                 query.finished();
-            else if ("cancelled".equals(status))
-                query.taskDeleteReason("deleted"); // TODO 22/07/2025 21:01 validate this
+            } else {
+                query.taskDeleteReason("deleted"); // ⚠️ Confirm if this delete reason matches your engine config
+            }
 
             return query.list()
                     .stream()
@@ -113,28 +116,53 @@ public class ActivitiTaskManager implements TaskManager {
         }
 
         var builder = TaskPayloadBuilder.tasks();
-        ofNullable(filter.getProcessInstanceId()).ifPresent(builder::withProcessInstanceId);
-        ofNullable(filter.getTaskDefinitionKey()).ifPresent(builder::withParentTaskId);
-        ofNullable(filter.getAssignee()).ifPresent(builder::withAssignee);
 
-        // TODO 22/07/2025 21:08 add missing filters
+        ofNullable(filter.getProcessInstanceId()).ifPresent(builder::withProcessInstanceId);
+        ofNullable(filter.getTaskDefinitionKey()).ifPresent(builder::withParentTaskId); // ⚠️ Note: parentTaskId vs taskDefinitionKey
+
+        if (filter.isUnassigned())
+            builder.withAssignee(null);
+        else
+            ofNullable(filter.getAssignee()).ifPresent(builder::withAssignee);
 
         var payload = builder.build();
-        var page = taskRuntime.tasks(Pageable.of(0, 100), payload);
+
+        var startIndex = filter.getStartIndex() != null ? filter.getStartIndex() : 0;
+        var maxResults = filter.getMaxResults() != null ? filter.getMaxResults() : 50;
+
+        var page = taskRuntime.tasks(Pageable.of(startIndex, maxResults), payload);
+
+        var createdAfter = filter.getCreatedAfter() != null;
+        var createdBefore = filter.getCreatedBefore() != null;
 
         return page.getContent()
                 .stream()
                 .filter(task -> {
-                    // TODO 22/07/2025 21:04 change this
-                    if (status.isEmpty()) return true;
-                    return task.getStatus().name().equalsIgnoreCase(status);
+
+                    var createdTime = ofNullable(task.getCreatedDate()).map(Date::getTime).orElse(null);
+
+                    if (createdAfter && createdTime != null && createdTime < filter.getCreatedAfter())
+                        return false;
+
+                    if (createdBefore && createdTime != null && createdTime > filter.getCreatedBefore())
+                        return false;
+
+                    if (status == null)
+                        return true;
+
+                    try {
+                        var runtimeStatus = IGRPTaskStatus.valueOf(task.getStatus().name());
+                        return runtimeStatus == status;
+                    } catch (IllegalArgumentException e) {
+                        return false;
+                    }
                 })
                 .map(task -> new TaskInfo(
                         task.getId(),
                         task.getName(),
                         task.getDescription(),
                         task.getProcessInstanceId(),
-                        task.getProcessInstanceId(), // TODO execution ID not available in TaskRuntime
+                        task.getProcessInstanceId(), // TODO: Execution ID unavailable
                         task.getTaskDefinitionKey(),
                         task.getAssignee(),
                         ofNullable(task.getCreatedDate()).map(Date::getTime).orElse(0L),
@@ -144,7 +172,6 @@ public class ActivitiTaskManager implements TaskManager {
                 ))
                 .toList();
     }
-
 
     @Override
     public void assignTask(String taskId, String userId) {
@@ -163,7 +190,8 @@ public class ActivitiTaskManager implements TaskManager {
     @Override
     public void completeTask(String taskId, Map<String, Object> variables, String userId) {
 
-        Map<String, Object> variablesPayload = variables != null ? variables : Map.of();
+        Map<String, Object> variablesPayload = variables != null ? new HashMap<>(variables) : new HashMap<>();
+        //variablesPayload.put(, userId);
 
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)
@@ -183,7 +211,7 @@ public class ActivitiTaskManager implements TaskManager {
     }
 
     @Override
-    public Map<String, Object> getTaskVariables(String taskId) {
+    public List<TaskVariableInstance> getTaskVariables(String taskId) {
 
         Objects.requireNonNull(taskId, "taskId cannot be null");
 
@@ -191,10 +219,16 @@ public class ActivitiTaskManager implements TaskManager {
                 .withTaskId(taskId)
                 .build();
 
-        // TODO 22/07/2025 21:08 fix this get variables
-
         return taskRuntime.variables(payload)
                 .stream()
-                .collect(Collectors.toMap(v -> v.getName(), v -> v.getValue()));
+                .map(obj -> new TaskVariableInstance(
+                        obj.getName(),
+                        obj.getType(),
+                        obj.getProcessInstanceId(),
+                        obj.getTaskId(),
+                        obj.isTaskVariable(),
+                        obj.getValue()
+                ))
+                .toList();
     }
 }
