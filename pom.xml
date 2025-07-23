@@ -12,12 +12,12 @@
     </parent>
 
     <groupId>cv.nosi.igrp</groupId>
-    <artifactId>igrp-process-manager-backend</artifactId>
+    <artifactId>igrp-process-management-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>IGRP Process Manager Backend</name>
-    <description>IGRP Process Manager Backend — Runtime engine for BPMN process execution</description>
+    <description>IGRP Process Management Backend — Runtime engine for BPMN process execution</description>
 
     <modules>
         <module>runtime-core</module>
@@ -31,8 +31,6 @@
         <igrp.encoding>UTF-8</igrp.encoding>
         <project.build.sourceEncoding>${igrp.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${igrp.encoding}</project.reporting.outputEncoding>
-
-        <!-- Dependency versions -->
         <activiti.version>8.6.0</activiti.version>
         <postgresql.version>42.7.7</postgresql.version>
     </properties>
@@ -40,21 +38,18 @@
     <dependencyManagement>
         <dependencies>
 
-            <!-- Activiti -->
             <dependency>
                 <groupId>org.activiti</groupId>
                 <artifactId>activiti-spring-boot-starter</artifactId>
                 <version>${activiti.version}</version>
             </dependency>
 
-            <!-- Database -->
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
 
-            <!-- Internal modules -->
             <dependency>
                 <groupId>cv.nosi.igrp</groupId>
                 <artifactId>runtime-core</artifactId>
@@ -71,27 +66,23 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Common dependencies for all modules -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <repositories>
