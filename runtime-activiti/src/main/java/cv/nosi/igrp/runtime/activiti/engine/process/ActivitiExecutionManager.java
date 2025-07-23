@@ -23,6 +23,8 @@ public class ActivitiExecutionManager implements ProcessExecution {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiExecutionManager.class);
 
+    private static final String IGRP_START_USER_ID = "igrpStartUserId";
+
     private final ProcessRuntime processRuntime;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
@@ -43,8 +45,8 @@ public class ActivitiExecutionManager implements ProcessExecution {
                 .start()
                 .withProcessDefinitionKey(processDefinitionKey)
                 .withBusinessKey(businessKey)
+                .withVariable(IGRP_START_USER_ID, startUserId) // TODO 22/07/2025 19:34 validate this name
                 .withVariables(variables)
-                .withVariable("igrpStartUserId", startUserId) // TODO 22/07/2025 19:34 validate this name
                 .build();
 
         return processRuntime.start(payload).getId();
@@ -98,7 +100,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
                     instance.getProcessDefinitionKey(),
                     instance.getBusinessKey(),
                     instance.getInitiator(),
-                    instance.getStartDate() != null ? instance.getStartDate().getTime() : 0,
+                    ofNullable(instance.getStartDate()).map(Date::getTime).orElse(0L),
                     instance.getStatus().name()
             ));
 
@@ -134,6 +136,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
             ofNullable(filter.getStartedBefore())
                     .ifPresent(date -> query.startedBefore(new Date(date)));
 
+            // TODO 23/07/2025 09:30 validate this string status names, see if enum is needed
 
             if (status.equals("active"))
                 query.active();

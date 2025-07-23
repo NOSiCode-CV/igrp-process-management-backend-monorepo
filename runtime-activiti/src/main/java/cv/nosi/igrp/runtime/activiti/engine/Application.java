@@ -26,7 +26,6 @@ public class Application {
     @Bean
     public CommandLineRunner init() {
         return args -> {
-            System.err.println("--------------------------------------------------------------------------------------");
 
             repositoryService.createDeployment()
                     .addInputStream("simple-process.bpmn20.xml", getClass().getResourceAsStream("/processes/simple-process.bpmn20.xml"))
@@ -34,9 +33,7 @@ public class Application {
 
             repositoryService.createProcessDefinitionQuery()
                     .list()
-                    .forEach(pd -> System.out.println("Deployed process: " + pd.getName() + " (id = " + pd.getId() + ")"));
-
-            System.err.println("--------------------------------------------------------------------------------------");
+                    .forEach(pd -> System.out.println("Deployed process: " + pd.getName() + " id = " + pd.getId()));
         };
     }
 
