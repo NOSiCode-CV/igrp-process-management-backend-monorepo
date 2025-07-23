@@ -1,10 +1,10 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
-import cv.nosi.igrp.runtime.core.engine.IGRPProcessStatus;
-import cv.nosi.igrp.runtime.core.engine.ProcessExecution;
-import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceFilter;
-import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceInfo;
-import cv.nosi.igrp.runtime.core.engine.model.ProcessVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
+import cv.nosi.igrp.runtime.core.engine.process.ProcessExecution;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceFilter;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceInfo;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessVariableInstance;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
 import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.HistoryService;

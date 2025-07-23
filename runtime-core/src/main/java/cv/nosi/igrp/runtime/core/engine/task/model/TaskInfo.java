@@ -1,4 +1,4 @@
-package cv.nosi.igrp.runtime.core.task.model;
+package cv.nosi.igrp.runtime.core.engine.task.model;
 
 /**
  * Classe para representar informações de uma tarefa.

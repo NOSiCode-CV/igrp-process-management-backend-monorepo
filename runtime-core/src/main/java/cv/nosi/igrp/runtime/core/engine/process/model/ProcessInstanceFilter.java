@@ -1,6 +1,6 @@
-package cv.nosi.igrp.runtime.core.engine.model;
+package cv.nosi.igrp.runtime.core.engine.process.model;
 
-import cv.nosi.igrp.runtime.core.engine.IGRPProcessStatus;
+import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,4 +1,4 @@
-package cv.nosi.igrp.runtime.core.task.model;
+package cv.nosi.igrp.runtime.core.engine.task.model;
 
 public enum IGRPTaskStatus {
     CREATED,

@@ -1,4 +1,4 @@
-package cv.nosi.igrp.runtime.core.engine.model;
+package cv.nosi.igrp.runtime.core.engine.process.model;
 
 public record ProcessVariableInstance(
         String name,

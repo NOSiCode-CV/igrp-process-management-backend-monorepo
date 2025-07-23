@@ -1,15 +1,16 @@
 package cv.nosi.igrp.runtime.activiti.engine.task;
 
-import cv.nosi.igrp.runtime.core.task.TaskManager;
-import cv.nosi.igrp.runtime.core.task.model.IGRPTaskStatus;
-import cv.nosi.igrp.runtime.core.task.model.TaskFilter;
-import cv.nosi.igrp.runtime.core.task.model.TaskInfo;
-import cv.nosi.igrp.runtime.core.task.model.TaskVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.task.TaskManager;
+import cv.nosi.igrp.runtime.core.engine.task.model.IGRPTaskStatus;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskFilter;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskInfo;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskVariableInstance;
 import org.activiti.api.runtime.shared.query.Pageable;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RuntimeService;
+import org.activiti.engine.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,11 +25,13 @@ public class ActivitiTaskManager implements TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiTaskManager.class);
 
     private final TaskRuntime taskRuntime;
+    private final TaskService taskService;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
 
-    public ActivitiTaskManager(TaskRuntime taskRuntime, RuntimeService runtimeService, HistoryService historyService) {
+    public ActivitiTaskManager(TaskRuntime taskRuntime, TaskService taskService, RuntimeService runtimeService, HistoryService historyService) {
         this.taskRuntime = taskRuntime;
+        this.taskService = taskService;
         this.runtimeService = runtimeService;
         this.historyService = historyService;
     }
@@ -230,5 +233,60 @@ public class ActivitiTaskManager implements TaskManager {
                         obj.getValue()
                 ))
                 .toList();
+    }
+
+    @Override
+    public boolean delegateTask(String taskId, String ownerUserId, String delegateUserId, String reason) {
+
+        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (task == null || !Objects.equals(task.getOwner(), ownerUserId))
+            return false;
+
+        taskService.setOwner(taskId, ownerUserId);
+        taskService.delegateTask(taskId, delegateUserId);
+
+        if (reason != null)
+            taskService.addComment(taskId, task.getProcessInstanceId(), "Delegated: " + reason);
+
+        return true;
+    }
+
+    @Override
+    public boolean resolveDelegatedTask(String taskId, String delegateUserId, String comment) {
+
+        var task = taskService.createTaskQuery().taskId(taskId).taskAssignee(delegateUserId).singleResult();
+        if (task == null)
+            return false;
+
+        if (comment != null)
+            taskService.addComment(taskId, task.getProcessInstanceId(), "Resolved: " + comment);
+
+        taskService.resolveTask(taskId);
+
+        return true;
+    }
+
+    @Override
+    public boolean setTaskDueDate(String taskId, long dueDate) {
+
+        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (task == null)
+            return false;
+
+        task.setDueDate(new Date(dueDate));
+        taskService.saveTask(task);
+
+        return true;
+    }
+
+    @Override
+    public boolean assignTask(String taskId, String userId, String reason) {
+        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (task != null) {
+            taskService.setAssignee(taskId, userId);
+            taskService.addComment(taskId, task.getProcessInstanceId(), "Assigned to " + userId + ": " + reason);
+            return true;
+        }
+        return false;
     }
 }

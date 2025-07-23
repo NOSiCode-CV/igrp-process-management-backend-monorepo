@@ -1,8 +1,8 @@
-package cv.nosi.igrp.runtime.core.engine;
+package cv.nosi.igrp.runtime.core.engine.process;
 
-import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceFilter;
-import cv.nosi.igrp.runtime.core.engine.model.ProcessInstanceInfo;
-import cv.nosi.igrp.runtime.core.engine.model.ProcessVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceFilter;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceInfo;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessVariableInstance;
 
 import java.util.List;
 import java.util.Map;

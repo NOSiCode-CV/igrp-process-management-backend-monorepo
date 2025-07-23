@@ -1,8 +1,8 @@
-package cv.nosi.igrp.runtime.core.task;
+package cv.nosi.igrp.runtime.core.engine.task;
 
-import cv.nosi.igrp.runtime.core.task.model.TaskFilter;
-import cv.nosi.igrp.runtime.core.task.model.TaskInfo;
-import cv.nosi.igrp.runtime.core.task.model.TaskVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskFilter;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskInfo;
+import cv.nosi.igrp.runtime.core.engine.task.model.TaskVariableInstance;
 
 import java.util.List;
 import java.util.Map;
@@ -76,5 +76,13 @@ public interface TaskManager {
      * @return mapa com as variáveis da tarefa
      */
     List<TaskVariableInstance> getTaskVariables(String taskId);
+
+    boolean delegateTask(String taskId, String ownerUserId, String delegateUserId, String reason);
+
+    boolean resolveDelegatedTask(String taskId, String delegateUserId, String comment);
+
+    boolean setTaskDueDate(String taskId, long dueDate);
+
+    boolean assignTask(String taskId, String userId, String reason);
 
 }
