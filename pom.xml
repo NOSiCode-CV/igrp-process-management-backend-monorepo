@@ -39,18 +39,6 @@
         <dependencies>
 
             <dependency>
-                <groupId>org.activiti</groupId>
-                <artifactId>activiti-spring-boot-starter</artifactId>
-                <version>${activiti.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${postgresql.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>cv.nosi.igrp</groupId>
                 <artifactId>runtime-core</artifactId>
                 <version>${project.version}</version>
