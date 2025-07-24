@@ -1,6 +1,6 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
-import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
+import cv.nosi.igrp.runtime.core.engine.process.model.IGRPProcessStatus;
 import cv.nosi.igrp.runtime.core.engine.process.ProcessManager;
 import cv.nosi.igrp.runtime.core.engine.process.model.*;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
