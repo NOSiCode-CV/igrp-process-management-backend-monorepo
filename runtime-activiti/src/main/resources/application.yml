@@ -7,11 +7,19 @@ spring:
   
   # Activiti configuration
   activiti:
+    check-process-definitions: false
+    # Enable/disable automatic database schema update at startup
     database-schema-update: true
+    # Audit history level (none, activity, audit, full)
     history-level: full
+    # Whether to store process history in a database
     db-history-used: true
-    # database-schema:
+    # Optional database schema name
+    # database-schema: schema example
+    # Name used when deploying process definitions
     deployment-name: SpringAutoDeployment
+    # Deployment mode (single-resource, resource-parent-folder, default-deployment)
+    deployment-mode: single-resource
 
 logging:
   level:

@@ -1,13 +1,12 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
 import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
-import cv.nosi.igrp.runtime.core.engine.process.ProcessExecution;
-import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceFilter;
-import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceInfo;
-import cv.nosi.igrp.runtime.core.engine.process.model.ProcessVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.process.ProcessManager;
+import cv.nosi.igrp.runtime.core.engine.process.model.*;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
 import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.HistoryService;
+import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
 import org.slf4j.Logger;
@@ -19,20 +18,22 @@ import java.util.*;
 import static java.util.Optional.*;
 
 @Component
-public class ActivitiExecutionManager implements ProcessExecution {
+public class ActivitiProcessManager implements ProcessManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiExecutionManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiProcessManager.class);
 
     private static final String IGRP_START_USER_ID = "igrpStartUserId";
 
     private final ProcessRuntime processRuntime;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
+    private final RepositoryService repositoryService;
 
-    public ActivitiExecutionManager(ProcessRuntime processRuntime, RuntimeService runtimeService, HistoryService historyService) {
+    public ActivitiProcessManager(ProcessRuntime processRuntime, RuntimeService runtimeService, HistoryService historyService, RepositoryService repositoryService) {
         this.processRuntime = processRuntime;
         this.runtimeService = runtimeService;
         this.historyService = historyService;
+        this.repositoryService = repositoryService;
     }
 
     @Override
@@ -93,14 +94,14 @@ public class ActivitiExecutionManager implements ProcessExecution {
     }
 
     @Override
-    public Optional<ProcessInstanceInfo> getProcessInstance(String processInstanceId) {
+    public Optional<ProcessInstance> getProcessInstance(String processInstanceId) {
         try {
 
             LOGGER.debug("Getting process instance with id {}", processInstanceId);
 
             var instance = processRuntime.processInstance(processInstanceId);
 
-            return of(new ProcessInstanceInfo(
+            return of(new ProcessInstance(
                     instance.getId(),
                     instance.getProcessDefinitionId(),
                     instance.getProcessDefinitionKey(),
@@ -119,7 +120,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
     }
 
     @Override
-    public List<ProcessInstanceInfo> listProcessInstances(ProcessInstanceFilter filter) {
+    public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
 
         final var status = filter.getStatus();
 
@@ -149,7 +150,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
 
             return query.list()
                     .stream()
-                    .map(instance -> new ProcessInstanceInfo(
+                    .map(instance -> new ProcessInstance(
                             instance.getId(),
                             instance.getProcessDefinitionId(),
                             instance.getProcessDefinitionKey(),
@@ -188,7 +189,7 @@ public class ActivitiExecutionManager implements ProcessExecution {
 
         return query.list()
                 .stream()
-                .map(instance -> new ProcessInstanceInfo(
+                .map(instance -> new ProcessInstance(
                         instance.getId(),
                         instance.getProcessDefinitionId(),
                         instance.getProcessDefinitionKey(),
@@ -234,6 +235,51 @@ public class ActivitiExecutionManager implements ProcessExecution {
                         obj.getType(),
                         obj.getProcessInstanceId(),
                         obj.getValue()
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter) {
+
+        var query = repositoryService.createProcessDefinitionQuery();
+
+        if (filter.getId() != null)
+            query.processDefinitionId(filter.getId());
+
+        if (filter.getKey() != null)
+            query.processDefinitionKey(filter.getKey());
+
+        if (filter.getName() != null)
+            query.processDefinitionName(filter.getName());
+
+        if (filter.getCategory() != null)
+            query.processDefinitionCategory(filter.getCategory());
+
+        if (filter.getDeploymentId() != null)
+            query.deploymentId(filter.getDeploymentId());
+
+        if (filter.getTenantId() != null)
+            query.processDefinitionTenantId(filter.getTenantId());
+
+        if (Boolean.TRUE.equals(filter.getSuspended()))
+            query.suspended();
+        if (Boolean.FALSE.equals(filter.getSuspended()))
+            query.active();
+
+        return query.orderByProcessDefinitionKey().asc()
+                .list()
+                .stream()
+                .map(def -> new ProcessDefinition(
+                        def.getId(),
+                        def.getName(),
+                        def.getKey(),
+                        def.getVersion(),
+                        def.getDeploymentId(),
+                        def.getDescription(),
+                        def.getCategory(),
+                        def.getTenantId(),
+                        def.isSuspended()
                 ))
                 .toList();
     }

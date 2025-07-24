@@ -1,7 +1,8 @@
 package cv.nosi.igrp.runtime.core.engine.process;
 
-import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceFilter;
-import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstanceInfo;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessDefinition;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessFilter;
+import cv.nosi.igrp.runtime.core.engine.process.model.ProcessInstance;
 import cv.nosi.igrp.runtime.core.engine.process.model.ProcessVariableInstance;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 
-public interface ProcessExecution {
+public interface ProcessManager {
 
 
     String startProcess(String processDefinitionKey, String businessKey,
@@ -25,16 +26,18 @@ public interface ProcessExecution {
     void terminateProcess(String processInstanceId, String reason) throws Exception;
 
 
-    Optional<ProcessInstanceInfo> getProcessInstance(String processInstanceId);
+    Optional<ProcessInstance> getProcessInstance(String processInstanceId);
 
 
-    List<ProcessInstanceInfo> listProcessInstances(ProcessInstanceFilter filter);
+    List<ProcessInstance> listProcessInstances(ProcessFilter filter);
 
 
     void setProcessVariables(String processInstanceId, Map<String, Object> variables) throws Exception;
 
 
     List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception;
+
+    List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter);
 
 
 }

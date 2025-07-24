@@ -4,12 +4,16 @@ import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Classe para representar critérios de filtragem de instâncias de processo.
- */
-@Getter
 @Setter
-public class ProcessInstanceFilter {
+@Getter
+public class ProcessFilter {
+    private String id;
+    private String key;
+    private String name;
+    private String category;
+    private String deploymentId;
+    private String tenantId;
+    private Boolean suspended;
     private String processDefinitionKey;
     private String businessKey;
     private String startUserId;
