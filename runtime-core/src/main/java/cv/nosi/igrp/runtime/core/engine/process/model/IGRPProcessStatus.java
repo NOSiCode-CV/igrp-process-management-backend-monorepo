@@ -1,4 +1,4 @@
-package cv.nosi.igrp.runtime.core.engine.process;
+package cv.nosi.igrp.runtime.core.engine.process.model;
 
 
 public enum IGRPProcessStatus {

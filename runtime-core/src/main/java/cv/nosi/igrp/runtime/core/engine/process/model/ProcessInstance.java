@@ -1,7 +1,5 @@
 package cv.nosi.igrp.runtime.core.engine.process.model;
 
-import cv.nosi.igrp.runtime.core.engine.process.IGRPProcessStatus;
-
 /**
  * Classe para representar informações de uma instância de processo.
  */
