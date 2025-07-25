@@ -2,9 +2,11 @@ package cv.nosi.igrp.runtime.core.engine.process.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Setter
 @Getter
+@ToString
 public class ProcessFilter {
     private Integer startIndex;
     private Integer maxResults;
