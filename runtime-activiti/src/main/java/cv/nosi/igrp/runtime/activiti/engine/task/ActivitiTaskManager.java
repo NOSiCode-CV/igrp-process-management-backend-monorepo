@@ -130,8 +130,8 @@ public class ActivitiTaskManager implements TaskManager {
 
         var payload = builder.build();
 
-        var startIndex = filter.getStartIndex() != null ? filter.getStartIndex() : 0;
-        var maxResults = filter.getMaxResults() != null ? filter.getMaxResults() : 50;
+        var startIndex = ofNullable(filter.getStartIndex()).orElse(0);
+        var maxResults = ofNullable(filter.getMaxResults()).orElse(50);
 
         var page = taskRuntime.tasks(Pageable.of(startIndex, maxResults), payload);
 
