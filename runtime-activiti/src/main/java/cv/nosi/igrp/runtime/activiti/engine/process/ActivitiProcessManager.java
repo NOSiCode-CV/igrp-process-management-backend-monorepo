@@ -5,6 +5,7 @@ import cv.nosi.igrp.runtime.core.engine.process.ProcessManager;
 import cv.nosi.igrp.runtime.core.engine.process.model.*;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
 import org.activiti.api.process.runtime.ProcessRuntime;
+import org.activiti.api.runtime.shared.query.Pageable;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
@@ -267,8 +268,11 @@ public class ActivitiProcessManager implements ProcessManager {
         if (Boolean.FALSE.equals(filter.getSuspended()))
             query.active();
 
+        var startIndex = filter.getStartIndex() != null ? filter.getStartIndex() : 0;
+        var maxResults = filter.getMaxResults() != null ? filter.getMaxResults() : 50;
+
         return query.orderByProcessDefinitionKey().asc()
-                .list()
+                .listPage(startIndex, maxResults)
                 .stream()
                 .map(def -> new ProcessDefinition(
                         def.getId(),

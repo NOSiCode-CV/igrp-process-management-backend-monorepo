@@ -16,6 +16,7 @@
       <module name="monitoring" target="17" />
       <module name="notification" target="17" />
       <module name="queue-management" target="17" />
+      <module name="runtime-deployment" target="21" />
       <module name="shared" target="23" />
       <module name="task-management" target="21" />
     </bytecodeTargetLevel>
@@ -28,6 +29,7 @@
       <module name="queue-management" options="-parameters" />
       <module name="runtime-activiti" options="-parameters" />
       <module name="runtime-core" options="-parameters" />
+      <module name="runtime-deployment" options="-parameters" />
       <module name="shared" options="-parameters" />
       <module name="task-management" options="-parameters" />
     </option>

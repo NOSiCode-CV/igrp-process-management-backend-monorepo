@@ -6,6 +6,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class ProcessFilter {
+    private Integer startIndex;
+    private Integer maxResults;
     private String id;
     private String key;
     private String name;
