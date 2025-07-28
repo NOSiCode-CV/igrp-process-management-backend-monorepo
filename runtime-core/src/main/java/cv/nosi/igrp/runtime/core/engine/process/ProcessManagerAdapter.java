@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 
-public interface ProcessManager {
+public interface ProcessManagerAdapter {
 
 
     String startProcess(String processDefinitionKey, String businessKey,
