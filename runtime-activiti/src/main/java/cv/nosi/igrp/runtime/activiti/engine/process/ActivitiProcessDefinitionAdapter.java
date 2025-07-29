@@ -64,8 +64,8 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .deploymentId(deployment.getId())
                     .deployedAt(deployment.getDeploymentTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
                     .build();
-            
-            LOGGER.info("Successfully deployed process definition with id: {}, key: {}, version: {}", 
+
+            LOGGER.info("Successfully deployed process definition with id: {}, key: {}, version: {}",
                     processDefinition.getId(), processDefinition.getKey(), processDefinition.getVersion());
             return result;
 
@@ -93,9 +93,9 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
         var result = repositoryService.createProcessDefinitionQuery()
                 .deploymentId(deploymentId)
                 .singleResult();
-        LOGGER.debug("Found process definition: id={}, key={}, version={}", 
-                result != null ? result.getId() : "null", 
-                result != null ? result.getKey() : "null", 
+        LOGGER.debug("Found process definition: id={}, key={}, version={}",
+                result != null ? result.getId() : "null",
+                result != null ? result.getKey() : "null",
                 result != null ? result.getVersion() : "null");
         return result;
     }

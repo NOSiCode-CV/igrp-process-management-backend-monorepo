@@ -10,22 +10,33 @@ import java.util.List;
 public interface ProcessDefinitionRepresentation {
 
     String getId();
+
     String getKey();
+
     String getName();
+
     String getDescription();
+
     String getVersion();
 
     BpmnSourceType getBpmnSourceType();
+
     String getBpmnXml();
+
     String getBpmnUrl();
+
     String getResourceName();
 
     boolean isDeployed();
+
     String getDeploymentId();
+
     LocalDateTime getDeployedAt();
 
     List<VariableRepresentation> getVariables();
+
     List<TaskRepresentation> getTasks();
+
     List<ProcessVersionRepresentation> getVersionHistory();
 
 }

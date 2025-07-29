@@ -26,7 +26,7 @@ public interface TaskManager {
      * @param variables         variáveis da tarefa
      * @return ID da tarefa criada
      */
-    String createTask(String processInstanceId, String taskDefinitionKey,String taskName, String assignee, Map<String, Object> variables);
+    String createTask(String processInstanceId, String taskDefinitionKey, String taskName, String assignee, Map<String, Object> variables);
 
     /**
      * Obtém uma tarefa pelo seu ID.

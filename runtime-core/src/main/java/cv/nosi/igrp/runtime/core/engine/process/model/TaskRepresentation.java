@@ -7,8 +7,11 @@ import java.util.List;
 public interface TaskRepresentation {
 
     String getId();
+
     String getKey();
+
     String getName();
+
     List<VariableRepresentation> getVariables();
 
 }
