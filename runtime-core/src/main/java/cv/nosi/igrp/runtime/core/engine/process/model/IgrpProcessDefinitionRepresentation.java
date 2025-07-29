@@ -60,6 +60,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
         this.bpmnSourceType = bpmnSourceType;
         this.deployed = deployed;
         this.deploymentId = deploymentId;
+        this.category = category;
         this.deployedAt = deployedAt;
         this.variables = variables == null ? new ArrayList<>() : variables;
         this.tasks = tasks == null ? new ArrayList<>() : tasks;
