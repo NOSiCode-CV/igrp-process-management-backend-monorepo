@@ -32,26 +32,34 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
     public ProcessDefinitionRepresentation deploy(ProcessDefinitionRepresentation processDefinitionRepresentation) throws ProcessDefinitionException {
         LOGGER.info("Deploying process definition with key: {}", processDefinitionRepresentation.getKey());
         try {
+
             LOGGER.debug("Validating process definition deployment parameters");
+
             final var resourceName = Objects.requireNonNull(processDefinitionRepresentation.getResourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");
 
             LOGGER.debug("Creating deployment for process with key: {}, resource name: {}", processDefinitionRepresentation.getKey(), resourceName);
+
             var deployment = repositoryService.createDeployment()
                     .addString(resourceName, processDefinitionRepresentation.getBpmnXml())
                     .name(processDefinitionRepresentation.getName() != null && !processDefinitionRepresentation.getName().isBlank()
                             ? processDefinitionRepresentation.getName()
                             : processDefinitionRepresentation.getDescription())
                     .key(Objects.requireNonNull(processDefinitionRepresentation.getKey(), "The key is required for deployment."))
+                    .category(processDefinitionRepresentation.getCategory())
                     .deploy();
+
             LOGGER.debug("Deployment created with id: {}", deployment.getId());
 
             LOGGER.debug("Retrieving process definition for deployment id: {}", deployment.getId());
+
             var processDefinition = getProcessDefinition(deployment.getId());
 
             LOGGER.debug("Retrieving BPMN XML for deployment id: {} and resource name: {}", deployment.getId(), processDefinition.getResourceName());
+
             final var bpmnXml = getBpmnXml(deployment.getId(), processDefinition.getResourceName());
 
             LOGGER.debug("Building process definition representation for id: {}, key: {}", processDefinition.getId(), processDefinition.getKey());
+
             var result = IgrpProcessDefinitionRepresentation.builder()
                     .id(processDefinition.getId())
                     .key(processDefinition.getKey())

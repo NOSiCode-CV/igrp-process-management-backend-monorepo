@@ -25,6 +25,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
 
     private boolean deployed;
     private String deploymentId;
+    private String category;
     private LocalDateTime deployedAt;
 
     private List<VariableRepresentation> variables;
@@ -43,6 +44,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
                                                BpmnSourceType bpmnSourceType,
                                                boolean deployed,
                                                String deploymentId,
+                                               String category,
                                                LocalDateTime deployedAt,
                                                List<VariableRepresentation> variables,
                                                List<TaskRepresentation> tasks,
@@ -63,5 +65,4 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
         this.tasks = tasks == null ? new ArrayList<>() : tasks;
         this.versionHistory = versionHistory == null ? new ArrayList<>() : versionHistory;
     }
-
 }

@@ -39,4 +39,6 @@ public interface ProcessDefinitionRepresentation {
 
     List<ProcessVersionRepresentation> getVersionHistory();
 
+    String getCategory();
 }
+
