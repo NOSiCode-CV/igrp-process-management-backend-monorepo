@@ -130,16 +130,16 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             var status = IGRPProcessStatus.valueOf(instance.getStatus().name());
             LOGGER.info("Successfully retrieved process instance with id: {}, status: {}", 
                     processInstanceId, status);
-                    
-            return of(new ProcessInstance(
-                    instance.getId(),
-                    instance.getProcessDefinitionId(),
-                    instance.getProcessDefinitionKey(),
-                    instance.getBusinessKey(),
-                    instance.getInitiator(),
-                    ofNullable(instance.getStartDate()).map(Date::getTime).orElse(0L),
-                    status
-            ));
+
+            var processInstance = new ProcessInstance();
+            processInstance.setId(instance.getId());
+            processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
+            processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
+            processInstance.setBusinessKey(instance.getBusinessKey());
+            processInstance.setStartUserId(instance.getInitiator());
+            processInstance.setStartTime(ofNullable(instance.getStartDate()).map(Date::getTime).orElse(0L));
+            processInstance.setStatus(status);
+            return of(processInstance);
 
         } catch (Exception e) {
             LOGGER.info("Process instance with id: {} not found or error occurred", processInstanceId);
@@ -210,15 +210,15 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                     .map(instance -> {
                         LOGGER.debug("Mapping process instance: id={}, definitionId={}, key={}", 
                                 instance.getId(), instance.getProcessDefinitionId(), instance.getProcessDefinitionKey());
-                        return new ProcessInstance(
-                                instance.getId(),
-                                instance.getProcessDefinitionId(),
-                                instance.getProcessDefinitionKey(),
-                                instance.getBusinessKey(),
-                                instance.getStartUserId(),
-                                ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L),
-                                instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING
-                        );
+                        var processInstance = new ProcessInstance();
+                        processInstance.setId(instance.getId());
+                        processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
+                        processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
+                        processInstance.setBusinessKey(instance.getBusinessKey());
+                        processInstance.setStartUserId(instance.getStartUserId());
+                        processInstance.setStartTime(ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L));
+                        processInstance.setStatus(instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING);
+                        return processInstance;
                     })
                     .toList();
         }
@@ -288,15 +288,15 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                     LOGGER.debug("Mapping historic process instance: id={}, definitionId={}, key={}, status={}", 
                             instance.getId(), instance.getProcessDefinitionId(), 
                             instance.getProcessDefinitionKey(), resolvedStatus);
-                    return new ProcessInstance(
-                            instance.getId(),
-                            instance.getProcessDefinitionId(),
-                            instance.getProcessDefinitionKey(),
-                            instance.getBusinessKey(),
-                            instance.getStartUserId(),
-                            ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L),
-                            resolvedStatus
-                    );
+                    var processInstance = new ProcessInstance();
+                    processInstance.setId(instance.getId());
+                    processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
+                    processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
+                    processInstance.setBusinessKey(instance.getBusinessKey());
+                    processInstance.setStartUserId(instance.getStartUserId());
+                    processInstance.setStartTime(ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L));
+                    processInstance.setStatus(resolvedStatus);
+                    return processInstance;
                 })
                 .toList();
     }
@@ -359,12 +359,12 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .map(obj -> {
                     LOGGER.debug("Mapping variable: name={}, type={}, value={}", 
                             obj.getName(), obj.getType(), obj.getValue());
-                    return new ProcessVariableInstance(
-                            obj.getName(),
-                            obj.getType(),
-                            obj.getProcessInstanceId(),
-                            obj.getValue()
-                    );
+                    var processVariableInstance = new ProcessVariableInstance();
+                    processVariableInstance.setName(obj.getName());
+                    processVariableInstance.setType(obj.getType());
+                    processVariableInstance.setProcessInstanceId(obj.getProcessInstanceId());
+                    processVariableInstance.setValue(obj.getValue());
+                    return processVariableInstance;
                 })
                 .toList();
         
@@ -436,17 +436,17 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .map(def -> {
                     LOGGER.debug("Mapping process definition: id={}, key={}, version={}, suspended={}", 
                             def.getId(), def.getKey(), def.getVersion(), def.isSuspended());
-                    return new ProcessDefinition(
-                            def.getId(),
-                            def.getName(),
-                            def.getKey(),
-                            def.getVersion(),
-                            def.getDeploymentId(),
-                            def.getDescription(),
-                            def.getCategory(),
-                            def.getTenantId(),
-                            def.isSuspended()
-                    );
+                    var processDefinition = new ProcessDefinition();
+                    processDefinition.setId(def.getId());
+                    processDefinition.setName(def.getName());
+                    processDefinition.setKey(def.getKey());
+                    processDefinition.setVersion(def.getVersion());
+                    processDefinition.setDeploymentId(def.getDeploymentId());
+                    processDefinition.setDescription(def.getDescription());
+                    processDefinition.setCategory(def.getCategory());
+                    processDefinition.setTenantId(def.getTenantId());
+                    processDefinition.setSuspended(def.isSuspended());
+                    return processDefinition;
                 })
                 .toList();
     }

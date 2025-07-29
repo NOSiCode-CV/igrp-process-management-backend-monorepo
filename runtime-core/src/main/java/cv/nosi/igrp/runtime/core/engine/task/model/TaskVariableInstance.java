@@ -1,17 +1,22 @@
 package cv.nosi.igrp.runtime.core.engine.task.model;
 
-public record TaskVariableInstance(
-        String name,
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-        String type,
+@Getter
+@Setter
+@ToString
+public class TaskVariableInstance {
+    private String name;
 
-        String processInstanceId,
+    private String type;
 
-        String taskId,
+    private String processInstanceId;
 
-        boolean isTaskVariable,
+    private String taskId;
 
-        Object value
-) {
+    private boolean isTaskVariable;
 
+    private Object value;
 }

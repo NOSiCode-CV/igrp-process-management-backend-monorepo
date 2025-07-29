@@ -1,13 +1,18 @@
 package cv.nosi.igrp.runtime.core.engine.process.model;
 
-public record ProcessVariableInstance(
-        String name,
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-        String type,
+@Setter
+@Getter
+@ToString
+public class ProcessVariableInstance {
+    private String name;
 
-        String processInstanceId,
+    private String type;
 
-        Object value
-) {
+    private String processInstanceId;
 
+    private Object value;
 }

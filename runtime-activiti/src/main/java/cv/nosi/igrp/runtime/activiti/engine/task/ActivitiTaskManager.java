@@ -67,20 +67,19 @@ public class ActivitiTaskManager implements TaskManager {
             
             LOGGER.debug("Task found: id={}, name={}, processInstanceId={}, assignee={}", 
                     task.getId(), task.getName(), task.getProcessInstanceId(), task.getAssignee());
-            
-            var taskInfo = new TaskInfo(
-                    task.getId(),
-                    task.getName(),
-                    task.getDescription(),
-                    task.getProcessInstanceId(),
-                    task.getTaskDefinitionKey(),
-                    task.getAssignee(),
-                    task.getOwner(),
-                    task.getCreatedDate().getTime(),
-                    ofNullable(task.getDueDate()).map(Date::getTime).orElse(null),
-                    task.getPriority(),
-                    task.getFormKey()
-            );
+
+            var taskInfo = new TaskInfo();
+            taskInfo.setId(task.getId());
+            taskInfo.setName(task.getName());
+            taskInfo.setDescription(task.getDescription());
+            taskInfo.setProcessInstanceId(task.getProcessInstanceId());
+            taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
+            taskInfo.setAssignee(task.getAssignee());
+            taskInfo.setOwner(task.getOwner());
+            taskInfo.setCreatedTime(task.getCreatedDate().getTime());
+            taskInfo.setDueDate(ofNullable(task.getDueDate()).map(Date::getTime).orElse(null));
+            taskInfo.setPriority(task.getPriority());
+            taskInfo.setFormKey(task.getFormKey());
             
             LOGGER.info("Successfully retrieved task with id: {}, name: {}", taskId, task.getName());
             return of(taskInfo);
@@ -152,19 +151,20 @@ public class ActivitiTaskManager implements TaskManager {
                     .map(task -> {
                         LOGGER.debug("Mapping historic task: id={}, name={}, processInstanceId={}", 
                                 task.getId(), task.getName(), task.getProcessInstanceId());
-                        return new TaskInfo(
-                                task.getId(),
-                                task.getName(),
-                                task.getDescription(),
-                                task.getProcessInstanceId(),
-                                task.getTaskDefinitionKey(),
-                                task.getAssignee(),
-                                task.getOwner(),
-                                task.getCreateTime().getTime(),
-                                ofNullable(task.getDueDate()).map(Date::getTime).orElse(0L),
-                                task.getPriority(),
-                                task.getFormKey()
-                        );
+                        
+                        var taskInfo = new TaskInfo();
+                        taskInfo.setId(task.getId());
+                        taskInfo.setName(task.getName());
+                        taskInfo.setDescription(task.getDescription());
+                        taskInfo.setProcessInstanceId(task.getProcessInstanceId());
+                        taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
+                        taskInfo.setAssignee(task.getAssignee());
+                        taskInfo.setOwner(task.getOwner());
+                        taskInfo.setCreatedTime(task.getCreateTime().getTime());
+                        taskInfo.setDueDate(ofNullable(task.getDueDate()).map(Date::getTime).orElse(null));
+                        taskInfo.setPriority(task.getPriority());
+                        taskInfo.setFormKey(task.getFormKey());
+                        return taskInfo;
                     })
                     .toList();
         }
@@ -248,19 +248,18 @@ public class ActivitiTaskManager implements TaskManager {
                 .map(task -> {
                     LOGGER.debug("Mapping task: id={}, name={}, processInstanceId={}, assignee={}", 
                             task.getId(), task.getName(), task.getProcessInstanceId(), task.getAssignee());
-                    return new TaskInfo(
-                            task.getId(),
-                            task.getName(),
-                            task.getDescription(),
-                            task.getProcessInstanceId(),
-                            task.getProcessInstanceId(), // TODO: Execution ID unavailable
-                            task.getTaskDefinitionKey(),
-                            task.getAssignee(),
-                            ofNullable(task.getCreatedDate()).map(Date::getTime).orElse(0L),
-                            ofNullable(task.getDueDate()).map(Date::getTime).orElse(0L),
-                            task.getPriority(),
-                            task.getFormKey()
-                    );
+                    var taskInfo = new TaskInfo();
+                    taskInfo.setId(task.getId());
+                    taskInfo.setName(task.getName());
+                    taskInfo.setDescription(task.getDescription());
+                    taskInfo.setProcessInstanceId(task.getProcessInstanceId());
+                    taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
+                    taskInfo.setAssignee(task.getAssignee());
+                    taskInfo.setCreatedTime(ofNullable(task.getCreatedDate()).map(Date::getTime).orElse(0L));
+                    taskInfo.setDueDate(ofNullable(task.getDueDate()).map(Date::getTime).orElse(null));
+                    taskInfo.setPriority(task.getPriority());
+                    taskInfo.setFormKey(task.getFormKey());
+                    return taskInfo;
                 })
                 .toList();
                 
@@ -352,14 +351,14 @@ public class ActivitiTaskManager implements TaskManager {
                 .map(obj -> {
                     LOGGER.debug("Mapping variable: name={}, type={}, taskVariable={}, value={}", 
                             obj.getName(), obj.getType(), obj.isTaskVariable(), obj.getValue());
-                    return new TaskVariableInstance(
-                            obj.getName(),
-                            obj.getType(),
-                            obj.getProcessInstanceId(),
-                            obj.getTaskId(),
-                            obj.isTaskVariable(),
-                            obj.getValue()
-                    );
+                    var taskVariable = new TaskVariableInstance();
+                    taskVariable.setName(obj.getName());
+                    taskVariable.setType(obj.getType());
+                    taskVariable.setProcessInstanceId(obj.getProcessInstanceId());
+                    taskVariable.setTaskId(obj.getTaskId());
+                    taskVariable.setTaskVariable(obj.isTaskVariable());
+                    taskVariable.setValue(obj.getValue());
+                    return taskVariable;
                 })
                 .toList();
         
