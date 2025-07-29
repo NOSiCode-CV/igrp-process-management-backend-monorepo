@@ -14,7 +14,7 @@ public interface ProcessManagerAdapter {
 
 
     String startProcess(String processDefinitionKey, String businessKey,
-                        Map<String, Object> variables, String startUserId) throws Exception;
+                        Map<String, Object> variables) throws Exception;
 
 
     void suspendProcess(String processInstanceId) throws Exception;

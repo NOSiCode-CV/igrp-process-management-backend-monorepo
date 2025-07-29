@@ -8,6 +8,7 @@ import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.repository.Deployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -36,25 +37,21 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables, String startUserId) throws Exception {
-        LOGGER.info("Starting process with definition key: {}, business key: {}, start user: {}",
-                processDefinitionKey, businessKey, startUserId);
+    public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) throws Exception {
+        LOGGER.info("Starting process with definition key: {}, business key: {}",
+                processDefinitionKey, businessKey);
 
         LOGGER.debug("Validating process start parameters");
-        Objects.requireNonNull(startUserId, "startUserId cannot be null");
         Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
 
-        LOGGER.debug("Preparing variables for process start");
-        var payloadVariables = variables != null ? new HashMap<>(variables) : new HashMap<String, Object>();
-        payloadVariables.put(IGRP_START_USER_ID, startUserId); // TODO 22/07/2025 19:34 validate this name
-        LOGGER.debug("Process variables prepared, count: {}", payloadVariables.size());
+        LOGGER.debug("Process variables prepared, count: {}", variables.size());
 
         LOGGER.debug("Building process start payload for definition key: {}", processDefinitionKey);
         var payload = ProcessPayloadBuilder
                 .start()
                 .withProcessDefinitionKey(processDefinitionKey)
                 .withBusinessKey(businessKey)
-                .withVariables(payloadVariables)
+                .withVariables(variables)
                 .build();
 
         LOGGER.debug("Starting process instance with definition key: {}", processDefinitionKey);
@@ -202,7 +199,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             }
 
             LOGGER.debug("Executing query and mapping results");
-            var results = query.list();
+            var results = query.list(); // TODO 29/07/2025 16:01 add pagination support
             LOGGER.info("Found {} process instances matching the filter criteria", results.size());
 
             return results
@@ -381,6 +378,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         LOGGER.debug("Creating process definition query");
         var query = repositoryService.createProcessDefinitionQuery();
 
+        List<Deployment> list = repositoryService.createDeploymentQuery().list();
+
         LOGGER.debug("Applying filter parameters to query");
         if (filter.getId() != null) {
             LOGGER.debug("Filtering by process definition id: {}", filter.getId());
@@ -434,18 +433,23 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         return definitions
                 .stream()
                 .map(def -> {
+
+                    org.activiti.engine.repository.ProcessDefinition def1 = def;
+
                     LOGGER.debug("Mapping process definition: id={}, key={}, version={}, suspended={}",
-                            def.getId(), def.getKey(), def.getVersion(), def.isSuspended());
+                            def1.getId(), def1.getKey(), def1.getVersion(), def1.isSuspended());
+
+
                     var processDefinition = new ProcessDefinition();
-                    processDefinition.setId(def.getId());
-                    processDefinition.setName(def.getName());
-                    processDefinition.setKey(def.getKey());
-                    processDefinition.setVersion(def.getVersion());
-                    processDefinition.setDeploymentId(def.getDeploymentId());
-                    processDefinition.setDescription(def.getDescription());
-                    processDefinition.setCategory(def.getCategory());
-                    processDefinition.setTenantId(def.getTenantId());
-                    processDefinition.setSuspended(def.isSuspended());
+                    processDefinition.setId(def1.getId());
+                    processDefinition.setName(def1.getName());
+                    processDefinition.setKey(def1.getKey());
+                    processDefinition.setVersion(def1.getVersion());
+                    processDefinition.setDeploymentId(def1.getDeploymentId());
+                    processDefinition.setDescription(def1.getDescription());
+                    processDefinition.setCategory(def1.getCategory());
+                    processDefinition.setTenantId(def1.getTenantId());
+                    processDefinition.setSuspended(def1.isSuspended());
                     return processDefinition;
                 })
                 .toList();
