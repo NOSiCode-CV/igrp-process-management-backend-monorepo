@@ -9,7 +9,7 @@ import cv.nosi.igrp.runtime.core.engine.process.exception.ProcessDefinitionExcep
  * This interface allows the application to remain decoupled from
  * any specific process engine implementation.
  */
-public interface IProcessDefinitionAdapter {
+public interface ProcessDefinitionAdapter {
 
     /**
      * Deploys the given process definition to the underlying workflow engine using

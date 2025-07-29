@@ -1,7 +1,7 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
 
-import cv.nosi.igrp.runtime.core.engine.process.IProcessDefinitionAdapter;
+import cv.nosi.igrp.runtime.core.engine.process.ProcessDefinitionAdapter;
 import cv.nosi.igrp.runtime.core.engine.process.ProcessDefinitionRepresentation;
 import cv.nosi.igrp.runtime.core.engine.process.exception.ProcessDefinitionException;
 import cv.nosi.igrp.runtime.core.engine.process.model.BpmnSourceType;
@@ -18,7 +18,7 @@ import java.util.Objects;
 
 
 @Service
-public class ActivitiProcessDefinitionAdapter implements IProcessDefinitionAdapter {
+public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiProcessDefinitionAdapter.class);
 
