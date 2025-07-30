@@ -30,14 +30,10 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
     @Override
     public ProcessDefinitionRepresentation deploy(ProcessDefinitionRepresentation processDefinitionRepresentation) throws ProcessDefinitionException {
-        LOGGER.info("Deploying process definition with key: {}", processDefinitionRepresentation.getKey());
+        LOGGER.info("Deploying process definition representation: {}", processDefinitionRepresentation);
         try {
 
-            LOGGER.debug("Validating process definition deployment parameters");
-
-            final var resourceName = Objects.requireNonNull(processDefinitionRepresentation.getResourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");
-
-            LOGGER.debug("Creating deployment for process with key: {}, resource name: {}", processDefinitionRepresentation.getKey(), resourceName);
+            var resourceName = Objects.requireNonNull(processDefinitionRepresentation.getResourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");
 
             var deployment = repositoryService.createDeployment()
                     .addString(resourceName, processDefinitionRepresentation.getBpmnXml())
@@ -45,37 +41,29 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                             ? processDefinitionRepresentation.getName()
                             : processDefinitionRepresentation.getDescription())
                     .key(Objects.requireNonNull(processDefinitionRepresentation.getKey(), "The key is required for deployment."))
-                    .category(processDefinitionRepresentation.getApplicationBase())
+                    .tenantId(processDefinitionRepresentation.getApplicationBase())
                     .deploy();
 
             LOGGER.debug("Deployment created: {}", deployment);
 
-            var processDefinition = getProcessDefinition(deployment.getId());
+            final var bpmnXml = getBpmnXml(deployment.getId(), processDefinitionRepresentation.getResourceName());
 
-            LOGGER.debug("Retrieving BPMN XML for deployment id: {} and resource name: {}", deployment.getId(), processDefinition.getResourceName());
+            LOGGER.debug("BPMN XML retrieved: {}", bpmnXml);
 
-            final var bpmnXml = getBpmnXml(deployment.getId(), processDefinition.getResourceName());
-
-            LOGGER.debug("Building process definition representation for id: {}, key: {}", processDefinition.getId(), processDefinition.getKey());
-
-            var result = IgrpProcessDefinitionRepresentation.builder()
-                    .id(processDefinition.getId())
-                    .key(processDefinition.getKey())
-                    .name(processDefinition.getName())
-                    .description(processDefinition.getDescription())
-                    .version(String.valueOf(processDefinition.getVersion()))
+            return IgrpProcessDefinitionRepresentation.builder()
+                    .id(deployment.getId())
+                    .key(deployment.getKey())
+                    .name(deployment.getName())
+                    .description(processDefinitionRepresentation.getDescription())
+                    .version(String.valueOf(deployment.getVersion()))
                     .bpmnXml(bpmnXml)
-                    .resourceName(processDefinition.getResourceName())
+                    .resourceName(processDefinitionRepresentation.getResourceName())
                     .applicationBase(deployment.getCategory())
                     .bpmnSourceType(BpmnSourceType.INLINE_XML)
                     .deployed(true)
                     .deploymentId(deployment.getId())
                     .deployedAt(deployment.getDeploymentTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
                     .build();
-
-            LOGGER.info("Successfully deployed process definition with id: {}, key: {}, version: {}",
-                    processDefinition.getId(), processDefinition.getKey(), processDefinition.getVersion());
-            return result;
 
         } catch (Exception ex) {
             LOGGER.error("Failed to deploy BPMN XML", ex);

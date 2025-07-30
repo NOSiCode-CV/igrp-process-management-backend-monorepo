@@ -1,8 +1,8 @@
 package cv.nosi.igrp.runtime.core.engine.process.model;
 
 public class ProcessFilter {
-    private Integer startIndex;
-    private Integer maxResults;
+    private Integer pageNumber;
+    private Integer pageSize;
     private String id;
     private String key;
     private String name;
@@ -18,20 +18,20 @@ public class ProcessFilter {
     private Long startedAfter;
     private Long startedBefore;
 
-    public Integer getStartIndex() {
-        return startIndex;
+    public Integer getPageNumber() {
+        return pageNumber;
     }
 
-    public void setStartIndex(Integer startIndex) {
-        this.startIndex = startIndex;
+    public void setPageNumber(Integer pageNumber) {
+        this.pageNumber = pageNumber;
     }
 
-    public Integer getMaxResults() {
-        return maxResults;
+    public Integer getPageSize() {
+        return pageSize;
     }
 
-    public void setMaxResults(Integer maxResults) {
-        this.maxResults = maxResults;
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
     }
 
     public String getId() {
@@ -138,11 +138,19 @@ public class ProcessFilter {
         this.startedBefore = startedBefore;
     }
 
+    public boolean isLatestVersion() {
+        return isLatestVersion;
+    }
+
+    public void setLatestVersion(boolean latestVersion) {
+        isLatestVersion = latestVersion;
+    }
+
     @Override
     public String toString() {
         return "ProcessFilter{" +
-               "startIndex=" + startIndex +
-               ", maxResults=" + maxResults +
+               " startIndex=" + pageNumber +
+               ", maxResults=" + pageSize +
                ", id='" + id + '\'' +
                ", key='" + key + '\'' +
                ", name='" + name + '\'' +
@@ -150,6 +158,7 @@ public class ProcessFilter {
                ", deploymentId='" + deploymentId + '\'' +
                ", tenantId='" + tenantId + '\'' +
                ", suspended=" + suspended +
+               ", isLatestVersion=" + isLatestVersion +
                ", processDefinitionKey='" + processDefinitionKey + '\'' +
                ", businessKey='" + businessKey + '\'' +
                ", startUserId='" + startUserId + '\'' +
@@ -157,13 +166,5 @@ public class ProcessFilter {
                ", startedAfter=" + startedAfter +
                ", startedBefore=" + startedBefore +
                '}';
-    }
-
-    public boolean isLatestVersion() {
-        return isLatestVersion;
-    }
-
-    public void setLatestVersion(boolean latestVersion) {
-        isLatestVersion = latestVersion;
     }
 }

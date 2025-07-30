@@ -372,7 +372,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     @Override
     public List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter) {
 
-        LOGGER.info("Getting deployed processes with filter: {}}", filter);
+        LOGGER.info("Getting deployed processes with filter: {}", filter);
 
         var query = repositoryService.createProcessDefinitionQuery();
 
@@ -420,8 +420,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             query.latestVersion();
         }
 
-        var startIndex = ofNullable(filter.getStartIndex()).orElse(0);
-        var maxResults = ofNullable(filter.getMaxResults()).orElse(50);
+        var startIndex = ofNullable(filter.getPageNumber()).orElse(0);
+        var maxResults = ofNullable(filter.getPageSize()).orElse(50);
         LOGGER.debug("Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
         var definitions = query.listPage(startIndex, maxResults);
