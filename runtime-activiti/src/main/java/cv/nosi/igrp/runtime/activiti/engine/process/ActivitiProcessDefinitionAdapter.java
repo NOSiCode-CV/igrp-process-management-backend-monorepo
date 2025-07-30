@@ -45,7 +45,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                             ? processDefinitionRepresentation.getName()
                             : processDefinitionRepresentation.getDescription())
                     .key(Objects.requireNonNull(processDefinitionRepresentation.getKey(), "The key is required for deployment."))
-                    .category(processDefinitionRepresentation.getCategory())
+                    .category(processDefinitionRepresentation.getApplicationBase())
                     .deploy();
 
             LOGGER.debug("Deployment created with id: {}", deployment.getId());
