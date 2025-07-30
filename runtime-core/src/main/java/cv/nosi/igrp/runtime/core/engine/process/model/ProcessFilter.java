@@ -10,6 +10,7 @@ public class ProcessFilter {
     private String deploymentId;
     private String tenantId;
     private Boolean suspended;
+    private boolean isLatestVersion = true;
     private String processDefinitionKey;
     private String businessKey;
     private String startUserId;
@@ -156,5 +157,13 @@ public class ProcessFilter {
                ", startedAfter=" + startedAfter +
                ", startedBefore=" + startedBefore +
                '}';
+    }
+
+    public boolean isLatestVersion() {
+        return isLatestVersion;
+    }
+
+    public void setLatestVersion(boolean latestVersion) {
+        isLatestVersion = latestVersion;
     }
 }

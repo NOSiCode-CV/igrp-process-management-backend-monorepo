@@ -415,11 +415,16 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             query.active();
         }
 
+        if (filter.isLatestVersion()) {
+            LOGGER.debug("Filtering for latest process definitions");
+            query.latestVersion();
+        }
+
         var startIndex = ofNullable(filter.getStartIndex()).orElse(0);
         var maxResults = ofNullable(filter.getMaxResults()).orElse(50);
         LOGGER.debug("Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
-        var definitions = query.list();
+        var definitions = query.listPage(startIndex, maxResults);
 
         LOGGER.info("Found {} deployed process definitions matching the filter criteria", definitions.size());
 
