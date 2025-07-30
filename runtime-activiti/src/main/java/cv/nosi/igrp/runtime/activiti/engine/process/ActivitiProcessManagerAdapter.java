@@ -390,7 +390,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         if (filter.getApplicationBase() != null) {
             LOGGER.debug("Filtering by category: {}", filter.getApplicationBase());
-            query.processDefinitionCategory(filter.getApplicationBase());
+            query.processDefinitionTenantId(filter.getApplicationBase());
         }
 
         if (filter.getDeploymentId() != null) {
