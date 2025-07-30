@@ -11,6 +11,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
 
     private String id;
     private String key;
+
     private String name;
     private String description;
     private String version;
@@ -28,10 +29,6 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
     private List<VariableRepresentation> variables;
     private List<TaskRepresentation> tasks;
     private List<ProcessVersionRepresentation> versionHistory;
-
-    private IgrpProcessDefinitionRepresentation() {
-        // Private default constructor
-    }
 
     private IgrpProcessDefinitionRepresentation(String id,
                                                 String key,
@@ -256,5 +253,27 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
                     applicationBase, deployedAt, variables, tasks, versionHistory
             );
         }
+    }
+
+    @Override
+    public String toString() {
+        return "IgrpProcessDefinitionRepresentation{" +
+               "id='" + id + '\'' +
+               ", key='" + key + '\'' +
+               ", name='" + name + '\'' +
+               ", description='" + description + '\'' +
+               ", version='" + version + '\'' +
+               ", bpmnXml='" + bpmnXml + '\'' +
+               ", bpmnUrl='" + bpmnUrl + '\'' +
+               ", bpmnSourceType=" + bpmnSourceType +
+               ", resourceName='" + resourceName + '\'' +
+               ", deployed=" + deployed +
+               ", deploymentId='" + deploymentId + '\'' +
+               ", applicationBase='" + applicationBase + '\'' +
+               ", deployedAt=" + deployedAt +
+               ", variables=" + variables +
+               ", tasks=" + tasks +
+               ", versionHistory=" + versionHistory +
+               '}';
     }
 }
