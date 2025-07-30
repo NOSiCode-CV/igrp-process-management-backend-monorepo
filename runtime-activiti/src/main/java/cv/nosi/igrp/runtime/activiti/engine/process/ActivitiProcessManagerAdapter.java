@@ -21,8 +21,6 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiProcessManagerAdapter.class);
 
-    private static final String IGRP_START_USER_ID = "igrpStartUserId";
-
     private final ProcessRuntime processRuntime;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
@@ -37,15 +35,13 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) throws Exception {
-        LOGGER.info("Starting process with definition key: {}, business key: {}",
-                processDefinitionKey, businessKey);
 
-        LOGGER.debug("Validating process start parameters");
+        LOGGER.info("Starting process with definition key: {}, business key: {}", processDefinitionKey, businessKey);
+
         Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
 
         LOGGER.debug("Process variables prepared, count: {}", variables.size());
 
-        LOGGER.debug("Building process start payload for definition key: {}", processDefinitionKey);
         var payload = ProcessPayloadBuilder
                 .start()
                 .withProcessDefinitionKey(processDefinitionKey)
@@ -53,11 +49,10 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .withVariables(variables)
                 .build();
 
-        LOGGER.debug("Starting process instance with definition key: {}", processDefinitionKey);
+        LOGGER.debug("Process start payload built successfully: {}", payload);
+
         var processInstance = processRuntime.start(payload);
 
-        LOGGER.info("Process instance started successfully with id: {}, definition id: {}",
-                processInstance.getId(), processInstance.getProcessDefinitionId());
         LOGGER.debug("Process instance details: {}", processInstance);
 
         return processInstance.getId();
@@ -65,15 +60,14 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public void suspendProcess(String processInstanceId) throws Exception {
+
         LOGGER.info("Suspending process instance with id: {}", processInstanceId);
 
-        LOGGER.debug("Building suspend payload for process instance id: {}", processInstanceId);
         var payload = ProcessPayloadBuilder
                 .suspend()
                 .withProcessInstanceId(processInstanceId)
                 .build();
 
-        LOGGER.debug("Executing suspend operation for process instance id: {}", processInstanceId);
         processRuntime.suspend(payload);
 
         LOGGER.info("Process instance with id: {} suspended successfully", processInstanceId);
@@ -81,15 +75,14 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public void resumeProcess(String processInstanceId) throws Exception {
+
         LOGGER.info("Resuming process instance with id: {}", processInstanceId);
 
-        LOGGER.debug("Building resume payload for process instance id: {}", processInstanceId);
         var payload = ProcessPayloadBuilder
                 .resume()
                 .withProcessInstanceId(processInstanceId)
                 .build();
 
-        LOGGER.debug("Executing resume operation for process instance id: {}", processInstanceId);
         processRuntime.resume(payload);
 
         LOGGER.info("Process instance with id: {} resumed successfully", processInstanceId);
@@ -97,16 +90,15 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public void terminateProcess(String processInstanceId, String deleteReason) throws Exception {
+
         LOGGER.info("Terminating process instance with id: {}, reason: {}", processInstanceId, deleteReason);
 
-        LOGGER.debug("Building delete payload for process instance id: {}", processInstanceId);
         var payload = ProcessPayloadBuilder
                 .delete()
                 .withProcessInstanceId(processInstanceId)
                 .withReason(deleteReason)
                 .build();
 
-        LOGGER.debug("Executing delete operation for process instance id: {}", processInstanceId);
         processRuntime.delete(payload);
 
         LOGGER.info("Process instance with id: {} terminated successfully", processInstanceId);
@@ -116,16 +108,12 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     public Optional<ProcessInstance> getProcessInstance(String processInstanceId) {
         LOGGER.info("Retrieving process instance with id: {}", processInstanceId);
         try {
-            LOGGER.debug("Querying runtime for process instance with id: {}", processInstanceId);
+
             var instance = processRuntime.processInstance(processInstanceId);
 
-            LOGGER.debug("Process instance found: id={}, definitionId={}, key={}, status={}",
-                    instance.getId(), instance.getProcessDefinitionId(),
-                    instance.getProcessDefinitionKey(), instance.getStatus().name());
+            LOGGER.debug("Process instance retrieved successfully: {}", instance);
 
             var status = IGRPProcessStatus.valueOf(instance.getStatus().name());
-            LOGGER.info("Successfully retrieved process instance with id: {}, status: {}",
-                    processInstanceId, status);
 
             var processInstance = new ProcessInstance();
             processInstance.setId(instance.getId());
