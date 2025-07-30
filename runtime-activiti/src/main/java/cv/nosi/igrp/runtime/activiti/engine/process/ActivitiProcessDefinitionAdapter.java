@@ -67,6 +67,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .description(processDefinition.getDescription())
                     .version(String.valueOf(processDefinition.getVersion()))
                     .bpmnXml(bpmnXml)
+                    .resourceName(processDefinition.getResourceName())
                     .bpmnSourceType(BpmnSourceType.INLINE_XML)
                     .deployed(true)
                     .deploymentId(deployment.getId())
