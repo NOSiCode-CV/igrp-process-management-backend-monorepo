@@ -48,9 +48,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .category(processDefinitionRepresentation.getApplicationBase())
                     .deploy();
 
-            LOGGER.debug("Deployment created with id: {}", deployment.getId());
-
-            LOGGER.debug("Retrieving process definition for deployment id: {}", deployment.getId());
+            LOGGER.debug("Deployment created: {}", deployment);
 
             var processDefinition = getProcessDefinition(deployment.getId());
 
@@ -68,7 +66,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .version(String.valueOf(processDefinition.getVersion()))
                     .bpmnXml(bpmnXml)
                     .resourceName(processDefinition.getResourceName())
-                    .applicationBase(processDefinition.getCategory())
+                    .applicationBase(deployment.getCategory())
                     .bpmnSourceType(BpmnSourceType.INLINE_XML)
                     .deployed(true)
                     .deploymentId(deployment.getId())
@@ -103,10 +101,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
         var result = repositoryService.createProcessDefinitionQuery()
                 .deploymentId(deploymentId)
                 .singleResult();
-        LOGGER.debug("Found process definition: id={}, key={}, version={}",
-                result != null ? result.getId() : "null",
-                result != null ? result.getKey() : "null",
-                result != null ? result.getVersion() : "null");
+        LOGGER.debug("Found process definition: {}", result);
         return result;
     }
 

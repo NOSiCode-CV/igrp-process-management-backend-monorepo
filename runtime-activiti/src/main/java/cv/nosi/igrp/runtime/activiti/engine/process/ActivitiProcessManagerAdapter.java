@@ -8,7 +8,6 @@ import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
-import org.activiti.engine.repository.Deployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -372,15 +371,11 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter) {
-        LOGGER.info("Getting deployed processes with filter: id={}, key={}, name={}",
-                filter.getId(), filter.getKey(), filter.getName());
 
-        LOGGER.debug("Creating process definition query");
+        LOGGER.info("Getting deployed processes with filter: {}}", filter);
+
         var query = repositoryService.createProcessDefinitionQuery();
 
-        List<Deployment> list = repositoryService.createDeploymentQuery().list();
-
-        LOGGER.debug("Applying filter parameters to query");
         if (filter.getId() != null) {
             LOGGER.debug("Filtering by process definition id: {}", filter.getId());
             query.processDefinitionId(filter.getId());
@@ -420,12 +415,17 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             query.active();
         }
 
+        if (filter.getApplicationBase() != null) {
+            LOGGER.debug("Filtering for category: {}", filter.getApplicationBase());
+            query.processDefinitionCategory(filter.getApplicationBase());
+        }
+
         var startIndex = ofNullable(filter.getStartIndex()).orElse(0);
         var maxResults = ofNullable(filter.getMaxResults()).orElse(50);
         LOGGER.debug("Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
-        LOGGER.debug("Executing query and mapping results");
-        var definitions = query.orderByProcessDefinitionKey().asc()
+        var definitions = query.orderByProcessDefinitionKey()
+                .asc()
                 .listPage(startIndex, maxResults);
 
         LOGGER.info("Found {} deployed process definitions matching the filter criteria", definitions.size());
@@ -433,23 +433,16 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         return definitions
                 .stream()
                 .map(def -> {
-
-                    org.activiti.engine.repository.ProcessDefinition def1 = def;
-
-                    LOGGER.debug("Mapping process definition: id={}, key={}, version={}, suspended={}",
-                            def1.getId(), def1.getKey(), def1.getVersion(), def1.isSuspended());
-
-
                     var processDefinition = new ProcessDefinition();
-                    processDefinition.setId(def1.getId());
-                    processDefinition.setName(def1.getName());
-                    processDefinition.setKey(def1.getKey());
-                    processDefinition.setVersion(def1.getVersion());
-                    processDefinition.setDeploymentId(def1.getDeploymentId());
-                    processDefinition.setDescription(def1.getDescription());
-                    processDefinition.setCategory(def1.getCategory());
-                    processDefinition.setTenantId(def1.getTenantId());
-                    processDefinition.setSuspended(def1.isSuspended());
+                    processDefinition.setId(def.getId());
+                    processDefinition.setName(def.getName());
+                    processDefinition.setKey(def.getKey());
+                    processDefinition.setVersion(def.getVersion());
+                    processDefinition.setDeploymentId(def.getDeploymentId());
+                    processDefinition.setDescription(def.getDescription());
+                    processDefinition.setCategory(def.getCategory());
+                    processDefinition.setTenantId(def.getTenantId());
+                    processDefinition.setSuspended(def.isSuspended());
                     return processDefinition;
                 })
                 .toList();
