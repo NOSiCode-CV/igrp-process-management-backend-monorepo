@@ -420,12 +420,12 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                     var definition = new ProcessDefinition();
                     definition.setId(def.getId());
                     definition.setName(def.getName());
+                    definition.setResourceName(def.getResourceName());
                     definition.setKey(def.getKey());
                     definition.setVersion(def.getVersion());
                     definition.setDeploymentId(def.getDeploymentId());
                     definition.setDescription(def.getDescription());
-                    definition.setCategory(def.getCategory());
-                    definition.setTenantId(def.getTenantId());
+                    definition.setApplicationBase(def.getTenantId());
                     definition.setSuspended(def.isSuspended());
                     return definition;
                 })

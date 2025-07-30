@@ -4,12 +4,12 @@ public class ProcessDefinition {
 
     private String id;
     private String name;
+    private String resourceName;
     private String key;
     private int version;
     private String deploymentId;
     private String description;
-    private String category;
-    private String tenantId;
+    private String applicationBase;
     private boolean suspended;
 
     public String getId() {
@@ -60,20 +60,12 @@ public class ProcessDefinition {
         this.description = description;
     }
 
-    public String getCategory() {
-        return category;
+    public String getApplicationBase() {
+        return applicationBase;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
+    public void setApplicationBase(String applicationBase) {
+        this.applicationBase = applicationBase;
     }
 
     public boolean isSuspended() {
@@ -84,17 +76,25 @@ public class ProcessDefinition {
         this.suspended = suspended;
     }
 
+    public String getResourceName() {
+        return resourceName;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
     @Override
     public String toString() {
         return "ProcessDefinition{" +
                "id='" + id + '\'' +
                ", name='" + name + '\'' +
+               ", resourceName='" + resourceName + '\'' +
                ", key='" + key + '\'' +
                ", version=" + version +
                ", deploymentId='" + deploymentId + '\'' +
                ", description='" + description + '\'' +
-               ", category='" + category + '\'' +
-               ", tenantId='" + tenantId + '\'' +
+               ", category='" + applicationBase + '\'' +
                ", suspended=" + suspended +
                '}';
     }
