@@ -314,7 +314,9 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public void setProcessVariables(String processInstanceId, Map<String, Object> variables) throws Exception {
+
         LOGGER.info("Setting variables for process instance with id: {}", processInstanceId);
+
         LOGGER.debug("Variables to set: count={}, keys={}",
                 variables != null ? variables.size() : 0,
                 variables != null ? variables.keySet() : "null");
@@ -327,6 +329,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .build();
 
         LOGGER.debug("Executing set variables operation for process instance id: {}", processInstanceId);
+
         processRuntime.setVariables(payload);
 
         LOGGER.info("Variables set successfully for process instance with id: {}", processInstanceId);
@@ -334,35 +337,34 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
     @Override
     public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception {
+
         LOGGER.info("Getting variables for process instance with id: {}", processInstanceId);
 
-        LOGGER.debug("Building variables payload for process instance id: {}", processInstanceId);
         var payload = ProcessPayloadBuilder
                 .variables()
                 .withProcessInstanceId(processInstanceId)
                 .build();
 
-        LOGGER.debug("Executing get variables operation for process instance id: {}", processInstanceId);
+        LOGGER.debug("GET VARIABLES PAYLOAD: {}", payload);
+
         var variables = processRuntime.variables(payload);
+
         LOGGER.debug("Retrieved {} variables for process instance id: {}", variables.size(), processInstanceId);
 
-        LOGGER.debug("Mapping variable objects to ProcessVariableInstance");
         var result = variables
                 .stream()
                 .map(obj -> {
-                    LOGGER.debug("Mapping variable: name={}, type={}, value={}",
-                            obj.getName(), obj.getType(), obj.getValue());
-                    var processVariableInstance = new ProcessVariableInstance();
-                    processVariableInstance.setName(obj.getName());
-                    processVariableInstance.setType(obj.getType());
-                    processVariableInstance.setProcessInstanceId(obj.getProcessInstanceId());
-                    processVariableInstance.setValue(obj.getValue());
-                    return processVariableInstance;
+                    var pvi = new ProcessVariableInstance();
+                    pvi.setName(obj.getName());
+                    pvi.setType(obj.getType());
+                    pvi.setProcessInstanceId(obj.getProcessInstanceId());
+                    pvi.setValue(obj.getValue());
+                    return pvi;
                 })
                 .toList();
 
-        LOGGER.info("Successfully retrieved {} variables for process instance with id: {}",
-                result.size(), processInstanceId);
+        LOGGER.debug("Successfully retrieved {} variables for process instance with id: {}", result.size(), processInstanceId);
+
         return result;
     }
 
@@ -383,14 +385,10 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             query.processDefinitionKey(filter.getKey());
         }
 
-        if (filter.getName() != null) {
-            LOGGER.debug("Filtering by process definition name: {}", filter.getName());
-            query.processDefinitionName(filter.getName());
-        }
-
-        if (filter.getApplicationBase() != null) {
-            LOGGER.debug("Filtering by category: {}", filter.getApplicationBase());
-            query.processDefinitionTenantId(filter.getApplicationBase());
+        if (filter.getName() != null && !filter.getName().isBlank()) {
+            var pattern = "%" + filter.getName().trim() + "%";
+            LOGGER.debug("Filtering by process definition name like: {}", pattern);
+            query.processDefinitionNameLike(pattern);
         }
 
         if (filter.getDeploymentId() != null) {
@@ -419,26 +417,29 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         var startIndex = ofNullable(filter.getPageNumber()).orElse(0);
         var maxResults = ofNullable(filter.getPageSize()).orElse(50);
-        LOGGER.debug("Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
+        LOGGER.debug("Final Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
-        var definitions = query.listPage(startIndex, maxResults);
+        LOGGER.debug("Filtering by ApplicationBase: {}", filter.getApplicationBase());
+
+        var definitions = query.processDefinitionTenantId(filter.getApplicationBase())
+                .listPage(startIndex, maxResults);
 
         LOGGER.info("Found {} deployed process definitions matching the filter criteria", definitions.size());
 
         return definitions
                 .stream()
                 .map(def -> {
-                    var processDefinition = new ProcessDefinition();
-                    processDefinition.setId(def.getId());
-                    processDefinition.setName(def.getName());
-                    processDefinition.setKey(def.getKey());
-                    processDefinition.setVersion(def.getVersion());
-                    processDefinition.setDeploymentId(def.getDeploymentId());
-                    processDefinition.setDescription(def.getDescription());
-                    processDefinition.setCategory(def.getCategory());
-                    processDefinition.setTenantId(def.getTenantId());
-                    processDefinition.setSuspended(def.isSuspended());
-                    return processDefinition;
+                    var definition = new ProcessDefinition();
+                    definition.setId(def.getId());
+                    definition.setName(def.getName());
+                    definition.setKey(def.getKey());
+                    definition.setVersion(def.getVersion());
+                    definition.setDeploymentId(def.getDeploymentId());
+                    definition.setDescription(def.getDescription());
+                    definition.setCategory(def.getCategory());
+                    definition.setTenantId(def.getTenantId());
+                    definition.setSuspended(def.isSuspended());
+                    return definition;
                 })
                 .toList();
     }
