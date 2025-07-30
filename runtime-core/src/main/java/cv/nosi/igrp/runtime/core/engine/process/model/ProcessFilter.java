@@ -6,7 +6,7 @@ public class ProcessFilter {
     private String id;
     private String key;
     private String name;
-    private String category;
+    private String applicationBase;
     private String deploymentId;
     private String tenantId;
     private Boolean suspended;
@@ -57,12 +57,12 @@ public class ProcessFilter {
         this.name = name;
     }
 
-    public String getCategory() {
-        return category;
+    public String getApplicationBase() {
+        return applicationBase;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setApplicationBase(String applicationBase) {
+        this.applicationBase = applicationBase;
     }
 
     public String getDeploymentId() {
@@ -145,7 +145,7 @@ public class ProcessFilter {
                ", id='" + id + '\'' +
                ", key='" + key + '\'' +
                ", name='" + name + '\'' +
-               ", category='" + category + '\'' +
+               ", applicationBase='" + applicationBase + '\'' +
                ", deploymentId='" + deploymentId + '\'' +
                ", tenantId='" + tenantId + '\'' +
                ", suspended=" + suspended +
