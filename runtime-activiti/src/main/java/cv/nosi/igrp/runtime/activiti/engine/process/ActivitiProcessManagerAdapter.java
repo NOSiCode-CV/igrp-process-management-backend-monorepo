@@ -281,9 +281,6 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .stream()
                 .map(instance -> {
                     var resolvedStatus = resolveStatus(instance);
-                    LOGGER.debug("Mapping historic process instance: id={}, definitionId={}, key={}, status={}",
-                            instance.getId(), instance.getProcessDefinitionId(),
-                            instance.getProcessDefinitionKey(), resolvedStatus);
                     var processInstance = new ProcessInstance();
                     processInstance.setId(instance.getId());
                     processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
