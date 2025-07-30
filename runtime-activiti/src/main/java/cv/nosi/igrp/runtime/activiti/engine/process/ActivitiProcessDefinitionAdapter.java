@@ -50,7 +50,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
             LOGGER.debug("BPMN XML retrieved: {}", bpmnXml);
 
-            return IgrpProcessDefinitionRepresentation.builder()
+            var result = IgrpProcessDefinitionRepresentation.builder()
                     .id(deployment.getId())
                     .key(deployment.getKey())
                     .name(deployment.getName())
@@ -64,6 +64,10 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .deploymentId(deployment.getId())
                     .deployedAt(deployment.getDeploymentTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
                     .build();
+
+            LOGGER.debug("Process definition representation created: {}", result);
+
+            return result;
 
         } catch (Exception ex) {
             LOGGER.error("Failed to deploy BPMN XML", ex);
