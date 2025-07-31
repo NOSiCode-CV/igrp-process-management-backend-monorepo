@@ -48,7 +48,6 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
             LOGGER.debug("BPMN XML retrieved: {}", bpmnXml);
 
             var result = IgrpProcessDefinitionRepresentation.builder()
-                    .id(deployment.getId())
                     .key(deployment.getKey())
                     .deploymentId(deployment.getId())
                     .name(deployment.getName())

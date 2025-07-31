@@ -9,44 +9,41 @@ import java.util.List;
 
 public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRepresentation {
 
-    private String id;
-    private String key;
+    private final String key;
+    private final String name;
+    private final String description;
+    private final String version;
 
-    private String name;
-    private String description;
-    private String version;
+    private final String bpmnXml;
+    private final String bpmnUrl;
+    private final BpmnSourceType bpmnSourceType;
+    private final String resourceName;
 
-    private String bpmnXml;
-    private String bpmnUrl;
-    private BpmnSourceType bpmnSourceType;
-    private String resourceName;
+    private final boolean deployed;
+    private final String deploymentId;
+    private final String applicationBase;
+    private final LocalDateTime deployedAt;
 
-    private boolean deployed;
-    private String deploymentId;
-    private String applicationBase;
-    private LocalDateTime deployedAt;
+    private final List<VariableRepresentation> variables;
+    private final List<TaskRepresentation> tasks;
+    private final List<ProcessVersionRepresentation> versionHistory;
 
-    private List<VariableRepresentation> variables;
-    private List<TaskRepresentation> tasks;
-    private List<ProcessVersionRepresentation> versionHistory;
-
-    private IgrpProcessDefinitionRepresentation(String id,
-                                                String key,
-                                                String name,
-                                                String description,
-                                                String version,
-                                                String bpmnXml,
-                                                String bpmnUrl,
-                                                String resourceName,
-                                                BpmnSourceType bpmnSourceType,
-                                                boolean deployed,
-                                                String deploymentId,
-                                                String applicationBase,
-                                                LocalDateTime deployedAt,
-                                                List<VariableRepresentation> variables,
-                                                List<TaskRepresentation> tasks,
-                                                List<ProcessVersionRepresentation> versionHistory) {
-        this.id = id;
+    private IgrpProcessDefinitionRepresentation(
+            String key,
+            String name,
+            String description,
+            String version,
+            String bpmnXml,
+            String bpmnUrl,
+            String resourceName,
+            BpmnSourceType bpmnSourceType,
+            boolean deployed,
+            String deploymentId,
+            String applicationBase,
+            LocalDateTime deployedAt,
+            List<VariableRepresentation> variables,
+            List<TaskRepresentation> tasks,
+            List<ProcessVersionRepresentation> versionHistory) {
         this.key = key;
         this.name = name;
         this.description = description;
@@ -66,11 +63,6 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public String getId() {
-        return id;
     }
 
     @Override
@@ -149,7 +141,6 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
     }
 
     public static class Builder {
-        private String id;
         private String key;
         private String name;
         private String description;
@@ -165,11 +156,6 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
         private List<VariableRepresentation> variables;
         private List<TaskRepresentation> tasks;
         private List<ProcessVersionRepresentation> versionHistory;
-
-        public Builder id(String id) {
-            this.id = id;
-            return this;
-        }
 
         public Builder key(String key) {
             this.key = key;
@@ -248,7 +234,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
 
         public IgrpProcessDefinitionRepresentation build() {
             return new IgrpProcessDefinitionRepresentation(
-                    id, key, name, description, version, bpmnXml, bpmnUrl,
+                    key, name, description, version, bpmnXml, bpmnUrl,
                     resourceName, bpmnSourceType, deployed, deploymentId,
                     applicationBase, deployedAt, variables, tasks, versionHistory
             );
@@ -258,8 +244,7 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
     @Override
     public String toString() {
         return "IgrpProcessDefinitionRepresentation{" +
-               "id='" + id + '\'' +
-               ", key='" + key + '\'' +
+               " key='" + key + '\'' +
                ", name='" + name + '\'' +
                ", description='" + description + '\'' +
                ", version='" + version + '\'' +
