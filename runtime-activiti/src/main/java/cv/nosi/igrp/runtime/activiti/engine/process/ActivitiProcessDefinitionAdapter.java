@@ -29,7 +29,9 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
     @Override
     public ProcessDefinitionRepresentation deploy(ProcessDefinitionRepresentation processDefinitionRepresentation) throws ProcessDefinitionException {
+
         LOGGER.info("Deploying process definition representation: {}", processDefinitionRepresentation);
+
         try {
 
             var resourceName = Objects.requireNonNull(processDefinitionRepresentation.getResourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");

@@ -10,6 +10,8 @@ import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -35,11 +37,17 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) throws Exception {
-
-        LOGGER.info("Starting process with definition key: {}, business key: {}", processDefinitionKey, businessKey);
+    public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) {
 
         Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated())
+            throw new AccessDeniedException("No authenticated user found");
+
+        LOGGER.debug("Process started by {}", authentication.getName());
+
+        LOGGER.info("Starting process with definition key: {}, business key: {}", processDefinitionKey, businessKey);
 
         LOGGER.debug("Process variables prepared, count: {}", variables.size());
 
@@ -48,6 +56,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .withProcessDefinitionKey(processDefinitionKey)
                 .withBusinessKey(businessKey)
                 .withVariables(variables)
+                .withVariable("startedBy", authentication.getName())
                 .build();
 
         LOGGER.debug("Process start payload built successfully: {}", payload);
@@ -60,7 +69,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public void suspendProcess(String processInstanceId) throws Exception {
+    public void suspendProcess(String processInstanceId) {
 
         LOGGER.info("Suspending process instance with id: {}", processInstanceId);
 
@@ -75,7 +84,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public void resumeProcess(String processInstanceId) throws Exception {
+    public void resumeProcess(String processInstanceId) {
 
         LOGGER.info("Resuming process instance with id: {}", processInstanceId);
 
@@ -90,7 +99,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public void terminateProcess(String processInstanceId, String deleteReason) throws Exception {
+    public void terminateProcess(String processInstanceId, String deleteReason) {
 
         LOGGER.info("Terminating process instance with id: {}, reason: {}", processInstanceId, deleteReason);
 
@@ -285,6 +294,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
 
     private IGRPProcessStatus resolveStatus(HistoricProcessInstance instance) {
+
         LOGGER.debug("Resolving status for historic process instance: id={}", instance.getId());
 
         if (instance.getEndTime() != null) {
@@ -302,7 +312,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public void setProcessVariables(String processInstanceId, Map<String, Object> variables) throws Exception {
+    public void setProcessVariables(String processInstanceId, Map<String, Object> variables) {
 
         LOGGER.info("Setting variables for process instance with id: {}", processInstanceId);
 
@@ -325,7 +335,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception {
+    public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) {
 
         LOGGER.info("Getting variables for process instance with id: {}", processInstanceId);
 

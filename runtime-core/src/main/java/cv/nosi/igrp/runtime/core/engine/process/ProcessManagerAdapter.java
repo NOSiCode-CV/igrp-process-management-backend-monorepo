@@ -14,16 +14,16 @@ public interface ProcessManagerAdapter {
 
 
     String startProcess(String processDefinitionKey, String businessKey,
-                        Map<String, Object> variables) throws Exception;
+                        Map<String, Object> variables);
 
 
-    void suspendProcess(String processInstanceId) throws Exception;
+    void suspendProcess(String processInstanceId);
 
 
-    void resumeProcess(String processInstanceId) throws Exception;
+    void resumeProcess(String processInstanceId);
 
 
-    void terminateProcess(String processInstanceId, String reason) throws Exception;
+    void terminateProcess(String processInstanceId, String reason);
 
 
     Optional<ProcessInstance> getProcessInstance(String processInstanceId);
@@ -32,10 +32,10 @@ public interface ProcessManagerAdapter {
     List<ProcessInstance> listProcessInstances(ProcessFilter filter);
 
 
-    void setProcessVariables(String processInstanceId, Map<String, Object> variables) throws Exception;
+    void setProcessVariables(String processInstanceId, Map<String, Object> variables);
 
 
-    List<ProcessVariableInstance> getProcessVariables(String processInstanceId) throws Exception;
+    List<ProcessVariableInstance> getProcessVariables(String processInstanceId);
 
     List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter);
 
