@@ -31,6 +31,12 @@
             <version>${activiti.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.activiti</groupId>
+            <artifactId>activiti-spring-security-policies</artifactId>
+            <version>${activiti.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
