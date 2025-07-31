@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 import static java.util.Optional.*;
 
@@ -361,30 +362,32 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         LOGGER.info("Getting deployed processes with filter: {}", filter);
 
+        Predicate<String> isValidString = obj -> obj != null && !obj.isBlank();
+
         var query = repositoryService.createProcessDefinitionQuery();
 
-        if (filter.getId() != null) {
+        if (isValidString.test(filter.getId())) {
             LOGGER.debug("Filtering by process definition id: {}", filter.getId());
             query.processDefinitionId(filter.getId());
         }
 
-        if (filter.getKey() != null) {
+        if (isValidString.test(filter.getKey())) {
             LOGGER.debug("Filtering by process definition key: {}", filter.getKey());
             query.processDefinitionKey(filter.getKey());
         }
 
-        if (filter.getName() != null && !filter.getName().isBlank()) {
+        if (isValidString.test(filter.getName())) {
             var pattern = "%" + filter.getName().trim() + "%";
             LOGGER.debug("Filtering by process definition name like: {}", pattern);
             query.processDefinitionNameLike(pattern);
         }
 
-        if (filter.getDeploymentId() != null) {
+        if (isValidString.test(filter.getDeploymentId())) {
             LOGGER.debug("Filtering by deployment id: {}", filter.getDeploymentId());
             query.deploymentId(filter.getDeploymentId());
         }
 
-        if (filter.getTenantId() != null) {
+        if (isValidString.test(filter.getTenantId())) {
             LOGGER.debug("Filtering by tenant id: {}", filter.getTenantId());
             query.processDefinitionTenantId(filter.getTenantId());
         }
@@ -403,14 +406,16 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             query.latestVersion();
         }
 
+        if (isValidString.test(filter.getApplicationBase())) {
+            LOGGER.debug("Filtering by ApplicationBase: {}", filter.getApplicationBase());
+            query.processDefinitionTenantId(filter.getApplicationBase());
+        }
+
         var startIndex = ofNullable(filter.getPageNumber()).orElse(0);
         var maxResults = ofNullable(filter.getPageSize()).orElse(50);
         LOGGER.debug("Final Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
-        LOGGER.debug("Filtering by ApplicationBase: {}", filter.getApplicationBase());
-
-        var definitions = query.processDefinitionTenantId(filter.getApplicationBase())
-                .listPage(startIndex, maxResults);
+        var definitions = query.listPage(startIndex, maxResults);
 
         LOGGER.info("Found {} deployed process definitions matching the filter criteria", definitions.size());
 
