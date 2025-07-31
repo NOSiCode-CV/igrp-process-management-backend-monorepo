@@ -59,6 +59,8 @@ public class ActivitiTaskManager implements TaskManager {
 
         LOGGER.info("Retrieving task with id: {}", taskId);
 
+        Objects.requireNonNull(taskId, "taskId cannot be null");
+
         try {
 
             var task = taskService.createTaskQuery().taskId(taskId).singleResult();
@@ -76,7 +78,7 @@ public class ActivitiTaskManager implements TaskManager {
             taskInfo.setAssignee(task.getAssignee());
             taskInfo.setOwner(task.getOwner());
             taskInfo.setCreatedTime(task.getCreateTime().getTime());
-            taskInfo.setDueDate(ofNullable(task.getDueDate()).map(Date::getTime).orElse(null));
+            ofNullable(task.getDueDate()).map(Date::getTime).ifPresent(taskInfo::setDueDate);
             taskInfo.setPriority(task.getPriority());
             taskInfo.setFormKey(task.getFormKey());
 
@@ -145,9 +147,6 @@ public class ActivitiTaskManager implements TaskManager {
             return tasks
                     .stream()
                     .map(task -> {
-                        LOGGER.debug("Mapping historic task: id={}, name={}, processInstanceId={}",
-                                task.getId(), task.getName(), task.getProcessInstanceId());
-
                         var taskInfo = new TaskInfo();
                         taskInfo.setId(task.getId());
                         taskInfo.setName(task.getName());
