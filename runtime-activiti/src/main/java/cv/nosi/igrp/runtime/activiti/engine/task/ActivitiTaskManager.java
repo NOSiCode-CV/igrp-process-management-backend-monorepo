@@ -61,7 +61,9 @@ public class ActivitiTaskManager implements TaskManager {
 
         try {
 
-            var task = taskRuntime.task(taskId);
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null)
+                return empty();
 
             LOGGER.debug("Task found: {}", task);
 
@@ -73,7 +75,7 @@ public class ActivitiTaskManager implements TaskManager {
             taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
             taskInfo.setAssignee(task.getAssignee());
             taskInfo.setOwner(task.getOwner());
-            taskInfo.setCreatedTime(task.getCreatedDate().getTime());
+            taskInfo.setCreatedTime(task.getCreateTime().getTime());
             taskInfo.setDueDate(ofNullable(task.getDueDate()).map(Date::getTime).orElse(null));
             taskInfo.setPriority(task.getPriority());
             taskInfo.setFormKey(task.getFormKey());
