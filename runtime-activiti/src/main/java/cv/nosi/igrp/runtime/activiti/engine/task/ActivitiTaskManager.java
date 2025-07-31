@@ -38,35 +38,32 @@ public class ActivitiTaskManager implements TaskManager {
 
     @Override
     public String createTask(String processInstanceId, String taskDefinitionKey, String taskName, String assignee, Map<String, Object> variables) {
-        LOGGER.info("Creating task for process instance: {}, definition key: {}, name: {}, assignee: {}",
-                processInstanceId, taskDefinitionKey, taskName, assignee);
 
-        LOGGER.debug("Building task creation payload");
+        LOGGER.info("Creating task for process instance: {}, definition key: {}, name: {}, assignee: {}", processInstanceId, taskDefinitionKey, taskName, assignee);
+
         var payload = TaskPayloadBuilder.create()
                 .withName(taskName)
                 .withAssignee(assignee)
                 .withParentTaskId(taskDefinitionKey)
                 .build();
 
-        LOGGER.debug("Executing task creation");
         var task = taskRuntime.create(payload);
 
-        LOGGER.info("Task created successfully with id: {}", task.getId());
-        LOGGER.debug("Created task details: id={}, name={}, assignee={}",
-                task.getId(), task.getName(), task.getAssignee());
+        LOGGER.debug("Task created successfully: {}", task);
 
         return task.getId();
     }
 
     @Override
     public Optional<TaskInfo> getTask(String taskId) {
+
         LOGGER.info("Retrieving task with id: {}", taskId);
+
         try {
-            LOGGER.debug("Querying task runtime for task id: {}", taskId);
+
             var task = taskRuntime.task(taskId);
 
-            LOGGER.debug("Task found: id={}, name={}, processInstanceId={}, assignee={}",
-                    task.getId(), task.getName(), task.getProcessInstanceId(), task.getAssignee());
+            LOGGER.debug("Task found: {}", task);
 
             var taskInfo = new TaskInfo();
             taskInfo.setId(task.getId());
@@ -81,7 +78,6 @@ public class ActivitiTaskManager implements TaskManager {
             taskInfo.setPriority(task.getPriority());
             taskInfo.setFormKey(task.getFormKey());
 
-            LOGGER.info("Successfully retrieved task with id: {}, name: {}", taskId, task.getName());
             return of(taskInfo);
 
         } catch (Exception e) {
@@ -93,21 +89,20 @@ public class ActivitiTaskManager implements TaskManager {
 
     @Override
     public List<TaskInfo> listTasks(TaskFilter filter) {
-        LOGGER.info("Listing tasks with filter: status={}, processInstanceId={}, assignee={}",
-                filter.getStatus(), filter.getProcessInstanceId(), filter.getAssignee());
 
-        LOGGER.debug("Processing filter parameters: {}", filter);
+        LOGGER.info("Listing tasks with filter: {}", filter);
+
         final var status = filter.getStatus();
 
         // If COMPLETED or CANCELLED, use historic task query
         if (status == IGRPTaskStatus.COMPLETED || status == IGRPTaskStatus.CANCELLED) {
+
             LOGGER.debug("Processing {} tasks query using history service", status);
 
-            LOGGER.debug("Creating historic task instance query");
             var query = historyService.createHistoricTaskInstanceQuery();
 
             LOGGER.debug("Applying filter parameters to historic query");
-            // Apply filters
+
             ofNullable(filter.getProcessInstanceId()).ifPresent(id -> {
                 LOGGER.debug("Filtering by process instance id: {}", id);
                 query.processInstanceId(id);
@@ -133,7 +128,6 @@ public class ActivitiTaskManager implements TaskManager {
                 query.taskCreatedBefore(new Date(time));
             });
 
-            // Apply status
             if (status == IGRPTaskStatus.COMPLETED) {
                 LOGGER.debug("Filtering for completed tasks");
                 query.finished();
@@ -171,10 +165,8 @@ public class ActivitiTaskManager implements TaskManager {
 
         LOGGER.debug("Processing active tasks query using task runtime");
 
-        LOGGER.debug("Building task payload builder");
         var builder = TaskPayloadBuilder.tasks();
 
-        LOGGER.debug("Applying filter parameters to task payload");
         ofNullable(filter.getProcessInstanceId()).ifPresent(id -> {
             LOGGER.debug("Filtering by process instance id: {}", id);
             builder.withProcessInstanceId(id);
@@ -195,15 +187,14 @@ public class ActivitiTaskManager implements TaskManager {
             });
         }
 
-        LOGGER.debug("Building task payload");
         var payload = builder.build();
 
         var startIndex = ofNullable(filter.getStartIndex()).orElse(0);
         var maxResults = ofNullable(filter.getMaxResults()).orElse(50);
         LOGGER.debug("Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
 
-        LOGGER.debug("Executing task runtime query");
         var page = taskRuntime.tasks(Pageable.of(startIndex, maxResults), payload);
+
         LOGGER.debug("Retrieved {} tasks from task runtime", page.getTotalItems());
 
         var createdAfter = filter.getCreatedAfter() != null;
@@ -213,7 +204,6 @@ public class ActivitiTaskManager implements TaskManager {
                 createdBefore ? new Date(filter.getCreatedBefore()) : "null",
                 status);
 
-        LOGGER.debug("Filtering and mapping task results");
         var result = page.getContent()
                 .stream()
                 .filter(task -> {
@@ -263,28 +253,27 @@ public class ActivitiTaskManager implements TaskManager {
                 })
                 .toList();
 
-        LOGGER.info("Found {} active tasks matching all filter criteria", result.size());
+        LOGGER.debug("Found {} active tasks matching all filter criteria", result.size());
+
         return result;
     }
 
     @Override
     public void completeTask(String taskId, Map<String, Object> variables, String userId) {
+
         LOGGER.info("Completing task with id: {}, user: {}", taskId, userId);
+
         LOGGER.debug("Variables count: {}, keys: {}",
                 variables != null ? variables.size() : 0,
                 variables != null ? variables.keySet() : "null");
 
-        LOGGER.debug("Preparing variables payload");
-        Map<String, Object> variablesPayload = variables != null ? new HashMap<>(variables) : new HashMap<>();
-        //variablesPayload.put(, userId);
+        var variablesPayload = variables != null ? new HashMap<>(variables) : new HashMap<String, Object>();
 
-        LOGGER.debug("Building complete payload for task id: {}", taskId);
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)
                 .withVariables(variablesPayload)
                 .build();
 
-        LOGGER.debug("Executing complete operation for task id: {}", taskId);
         taskRuntime.complete(payload);
 
         LOGGER.info("Task with id: {} successfully completed by user: {}", taskId, userId);
@@ -292,40 +281,39 @@ public class ActivitiTaskManager implements TaskManager {
 
     @Override
     public void setTaskVariables(String taskId, Map<String, Object> variables) {
+
         LOGGER.info("Setting variables for task with id: {}", taskId);
+
         LOGGER.debug("Variables count: {}, keys: {}",
                 variables != null ? variables.size() : 0,
                 variables != null ? variables.keySet() : "null");
 
-        LOGGER.debug("Validating parameters");
         Objects.requireNonNull(taskId, "taskId cannot be null");
 
         if (variables != null && !variables.isEmpty()) {
-            LOGGER.debug("Setting variables for task id: {}", taskId);
             runtimeService.setVariables(taskId, variables);
             LOGGER.info("Variables successfully set for task with id: {}", taskId);
-        } else {
-            LOGGER.debug("No variables to set for task id: {}, skipping operation", taskId);
+            return;
         }
+
+        LOGGER.debug("No variables to set for task id: {}, skipping operation", taskId);
     }
 
     @Override
     public List<TaskVariableInstance> getTaskVariables(String taskId) {
-        LOGGER.info("Getting variables for task with id: {}", taskId);
 
-        LOGGER.debug("Validating parameters");
         Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.debug("Building variables payload for task id: {}", taskId);
+        LOGGER.info("Getting variables for task with id: {}", taskId);
+
         var payload = TaskPayloadBuilder.variables()
                 .withTaskId(taskId)
                 .build();
 
-        LOGGER.debug("Executing get variables operation for task id: {}", taskId);
         var variables = taskRuntime.variables(payload);
+
         LOGGER.debug("Retrieved {} variables for task id: {}", variables.size(), taskId);
 
-        LOGGER.debug("Mapping variable objects to TaskVariableInstance");
         var result = variables
                 .stream()
                 .map(obj -> {
@@ -342,73 +330,134 @@ public class ActivitiTaskManager implements TaskManager {
                 })
                 .toList();
 
-        LOGGER.info("Successfully retrieved {} variables for task with id: {}",
-                result.size(), taskId);
+        LOGGER.info("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);
+
         return result;
     }
 
     @Override
     public boolean delegateTask(String taskId, String ownerUserId, String delegateUserId, String reason) {
 
-        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (task == null || !Objects.equals(task.getOwner(), ownerUserId))
+        LOGGER.info("Delegating task id: {} from owner: {} to user: {}", taskId, ownerUserId, delegateUserId);
+
+        try {
+
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null || !Objects.equals(task.getOwner(), ownerUserId)) {
+                LOGGER.warn("Cannot delegate task: Task {} does not exist or owner mismatch", taskId);
+                return false;
+            }
+
+            taskService.setOwner(taskId, ownerUserId);
+            taskService.delegateTask(taskId, delegateUserId);
+
+            if (reason != null)
+                taskService.addComment(taskId, task.getProcessInstanceId(), "Delegated: " + reason);
+
+            LOGGER.info("Task {} successfully delegated from {} to {}", taskId, ownerUserId, delegateUserId);
+
+            return true;
+
+        } catch (Exception e) {
+            LOGGER.error("Error delegating task {} from {} to {}", taskId, ownerUserId, delegateUserId, e);
             return false;
-
-        taskService.setOwner(taskId, ownerUserId);
-        taskService.delegateTask(taskId, delegateUserId);
-
-        if (reason != null)
-            taskService.addComment(taskId, task.getProcessInstanceId(), "Delegated: " + reason);
-
-        return true;
+        }
     }
 
     @Override
     public boolean resolveDelegatedTask(String taskId, String delegateUserId, String comment) {
 
-        var task = taskService.createTaskQuery().taskId(taskId).taskAssignee(delegateUserId).singleResult();
-        if (task == null)
+        LOGGER.info("Resolving delegated task id: {} by delegate user: {}", taskId, delegateUserId);
+
+        try {
+            var task = taskService.createTaskQuery().taskId(taskId).taskAssignee(delegateUserId).singleResult();
+            if (task == null) {
+                LOGGER.warn("Cannot resolve task: Task {} does not exist or delegate user mismatch", taskId);
+                return false;
+            }
+
+            if (comment != null) {
+                taskService.addComment(taskId, task.getProcessInstanceId(), "Resolved: " + comment);
+            }
+
+            taskService.resolveTask(taskId);
+
+            LOGGER.info("Task {} successfully resolved by delegate user {}", taskId, delegateUserId);
+
+            return true;
+
+        } catch (Exception e) {
+            LOGGER.error("Error resolving delegated task {} by user {}", taskId, delegateUserId, e);
             return false;
-
-        if (comment != null)
-            taskService.addComment(taskId, task.getProcessInstanceId(), "Resolved: " + comment);
-
-        taskService.resolveTask(taskId);
-
-        return true;
+        }
     }
 
     @Override
     public boolean setTaskDueDate(String taskId, long dueDate) {
 
-        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (task == null)
+        LOGGER.info("Setting due date {} for task id: {}", new Date(dueDate), taskId);
+
+        try {
+
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null) {
+                LOGGER.warn("Cannot set due date: Task {} does not exist", taskId);
+                return false;
+            }
+
+            task.setDueDate(new Date(dueDate));
+            taskService.saveTask(task);
+
+            LOGGER.info("Successfully set due date for task {}", taskId);
+
+            return true;
+
+        } catch (Exception e) {
+            LOGGER.error("Error setting due date for task {}", taskId, e);
             return false;
-
-        task.setDueDate(new Date(dueDate));
-        taskService.saveTask(task);
-
-        return true;
+        }
     }
 
     @Override
     public void assignTask(String taskId, String userId, String reason) {
-        var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        taskService.setAssignee(taskId, userId);
-        taskService.addComment(taskId, task.getProcessInstanceId(), "Assigned to " + userId + ": " + reason);
+
+        LOGGER.info("Assigning task id: {} to user: {}", taskId, userId);
+
+        try {
+
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null) {
+                LOGGER.warn("Cannot assign task: Task {} does not exist", taskId);
+                return;
+            }
+
+            taskService.setAssignee(taskId, userId);
+            taskService.addComment(taskId, task.getProcessInstanceId(), "Assigned to " + userId + ": " + reason);
+
+            LOGGER.info("Task {} successfully assigned to user {}", taskId, userId);
+
+        } catch (Exception e) {
+            LOGGER.error("Error assigning task {} to user {}", taskId, userId, e);
+        }
     }
 
     @Override
     public void claimTask(String taskId, String userId) {
+
         LOGGER.info("Claiming task with id: {}", taskId);
+
         try {
+
             var task = taskService.createTaskQuery().taskId(taskId).singleResult();
             if (task == null) {
                 LOGGER.warn("Cannot claim task: Task {} does not exist", taskId);
                 return;
             }
+
             taskService.claim(taskId, userId);
+
             LOGGER.info("Task {} successfully claimed by user {}", taskId, userId);
+
         } catch (Exception e) {
             LOGGER.error("Error claiming task {}", taskId, e);
         }
@@ -416,15 +465,21 @@ public class ActivitiTaskManager implements TaskManager {
 
     @Override
     public void unclaimTask(String taskId) {
+
         LOGGER.info("Unclaiming task with id: {}", taskId);
+
         try {
+
             var task = taskService.createTaskQuery().taskId(taskId).singleResult();
             if (task == null) {
                 LOGGER.warn("Cannot unclaim task: Task {} does not exist", taskId);
                 return;
             }
+
             taskService.setAssignee(taskId, null);
+
             LOGGER.info("Task {} successfully unclaimed", taskId);
+
         } catch (Exception e) {
             LOGGER.error("Error unclaiming task {}", taskId, e);
         }
