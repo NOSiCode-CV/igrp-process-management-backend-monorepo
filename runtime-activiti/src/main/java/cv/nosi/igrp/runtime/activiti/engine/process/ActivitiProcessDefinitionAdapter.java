@@ -1,6 +1,5 @@
 package cv.nosi.igrp.runtime.activiti.engine.process;
 
-
 import cv.nosi.igrp.runtime.core.engine.process.ProcessDefinitionAdapter;
 import cv.nosi.igrp.runtime.core.engine.process.ProcessDefinitionRepresentation;
 import cv.nosi.igrp.runtime.core.engine.process.exception.ProcessDefinitionException;
@@ -37,9 +36,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
             var deployment = repositoryService.createDeployment()
                     .addString(resourceName, processDefinitionRepresentation.getBpmnXml())
-                    .name(processDefinitionRepresentation.getName() != null && !processDefinitionRepresentation.getName().isBlank()
-                            ? processDefinitionRepresentation.getName()
-                            : processDefinitionRepresentation.getDescription())
+                    .name(processDefinitionRepresentation.getName())
                     .key(Objects.requireNonNull(processDefinitionRepresentation.getKey(), "The key is required for deployment."))
                     .tenantId(processDefinitionRepresentation.getApplicationBase())
                     .deploy();
@@ -53,15 +50,15 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
             var result = IgrpProcessDefinitionRepresentation.builder()
                     .id(deployment.getId())
                     .key(deployment.getKey())
+                    .deploymentId(deployment.getId())
                     .name(deployment.getName())
-                    .description(processDefinitionRepresentation.getDescription())
+                    .description(deployment.getName())
                     .version(String.valueOf(deployment.getVersion()))
                     .bpmnXml(bpmnXml)
                     .resourceName(processDefinitionRepresentation.getResourceName())
                     .applicationBase(deployment.getTenantId())
                     .bpmnSourceType(BpmnSourceType.INLINE_XML)
                     .deployed(true)
-                    .deploymentId(deployment.getId())
                     .deployedAt(deployment.getDeploymentTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
                     .build();
 
@@ -77,11 +74,16 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
     @Override
     public void undeploy(String deploymentId) throws ProcessDefinitionException {
+
         LOGGER.info("Undeploying process definition with deployment id: {}", deploymentId);
+
         try {
             LOGGER.debug("Deleting deployment with id: {}, cascade: true", deploymentId);
+
             repositoryService.deleteDeployment(deploymentId, true);
+
             LOGGER.info("Successfully undeployed process definition with deployment id: {}", deploymentId);
+
         } catch (Exception ex) {
             LOGGER.error("Failed to undeploy the process definition with deployment id: {}", deploymentId, ex);
             throw new ProcessDefinitionException("An error occurred when undeploy the process definition", ex);
@@ -90,18 +92,26 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
     private ProcessDefinition getProcessDefinition(final String deploymentId) {
         LOGGER.debug("Querying process definition for deployment id: {}", deploymentId);
+
         var result = repositoryService.createProcessDefinitionQuery()
                 .deploymentId(deploymentId)
                 .singleResult();
+
         LOGGER.debug("Found process definition: {}", result);
+
         return result;
     }
 
     private String getBpmnXml(final String deploymentId, final String resourceName) throws Exception {
+
         LOGGER.debug("Retrieving BPMN XML content for deployment id: {}, resource name: {}", deploymentId, resourceName);
+
         try (var bpmnStream = repositoryService.getResourceAsStream(deploymentId, resourceName)) {
+
             var xml = new String(bpmnStream.readAllBytes(), StandardCharsets.UTF_8);
+
             LOGGER.debug("Successfully retrieved BPMN XML content, size: {} bytes", xml.length());
+
             return xml;
         }
     }
