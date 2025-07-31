@@ -268,26 +268,6 @@ public class ActivitiTaskManager implements TaskManager {
     }
 
     @Override
-    public void assignTask(String taskId, String userId) {
-        LOGGER.info("Assigning task with id: {} to user: {}", taskId, userId);
-
-        LOGGER.debug("Validating parameters");
-        Objects.requireNonNull(taskId, "taskId cannot be null");
-        Objects.requireNonNull(userId, "userId cannot be null");
-
-        LOGGER.debug("Building claim payload for task id: {}, assignee: {}", taskId, userId);
-        var payload = TaskPayloadBuilder.claim()
-                .withTaskId(taskId)
-                .withAssignee(userId)
-                .build();
-
-        LOGGER.debug("Executing claim operation");
-        taskRuntime.claim(payload);
-
-        LOGGER.info("Task with id: {} successfully assigned to user: {}", taskId, userId);
-    }
-
-    @Override
     public void completeTask(String taskId, Map<String, Object> variables, String userId) {
         LOGGER.info("Completing task with id: {}, user: {}", taskId, userId);
         LOGGER.debug("Variables count: {}, keys: {}",
@@ -412,13 +392,41 @@ public class ActivitiTaskManager implements TaskManager {
     }
 
     @Override
-    public boolean assignTask(String taskId, String userId, String reason) {
+    public void assignTask(String taskId, String userId, String reason) {
         var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (task != null) {
-            taskService.setAssignee(taskId, userId);
-            taskService.addComment(taskId, task.getProcessInstanceId(), "Assigned to " + userId + ": " + reason);
-            return true;
+        taskService.setAssignee(taskId, userId);
+        taskService.addComment(taskId, task.getProcessInstanceId(), "Assigned to " + userId + ": " + reason);
+    }
+
+    @Override
+    public void claimTask(String taskId, String userId) {
+        LOGGER.info("Claiming task with id: {}", taskId);
+        try {
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null) {
+                LOGGER.warn("Cannot claim task: Task {} does not exist", taskId);
+                return;
+            }
+            taskService.claim(taskId, userId);
+            LOGGER.info("Task {} successfully claimed by user {}", taskId, userId);
+        } catch (Exception e) {
+            LOGGER.error("Error claiming task {}", taskId, e);
         }
-        return false;
+    }
+
+    @Override
+    public void unclaimTask(String taskId) {
+        LOGGER.info("Unclaiming task with id: {}", taskId);
+        try {
+            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            if (task == null) {
+                LOGGER.warn("Cannot unclaim task: Task {} does not exist", taskId);
+                return;
+            }
+            taskService.setAssignee(taskId, null);
+            LOGGER.info("Task {} successfully unclaimed", taskId);
+        } catch (Exception e) {
+            LOGGER.error("Error unclaiming task {}", taskId, e);
+        }
     }
 }
