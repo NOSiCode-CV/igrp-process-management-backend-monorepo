@@ -237,8 +237,6 @@ public class ActivitiTaskManager implements TaskManager {
                     }
                 })
                 .map(task -> {
-                    LOGGER.debug("Mapping task: id={}, name={}, processInstanceId={}, assignee={}",
-                            task.getId(), task.getName(), task.getProcessInstanceId(), task.getAssignee());
                     var taskInfo = new TaskInfo();
                     taskInfo.setId(task.getId());
                     taskInfo.setName(task.getName());
@@ -262,6 +260,8 @@ public class ActivitiTaskManager implements TaskManager {
     @Override
     public void completeTask(String taskId, Map<String, Object> variables, String userId) {
 
+        Objects.requireNonNull(taskId, "taskId cannot be null");
+
         LOGGER.info("Completing task with id: {}, user: {}", taskId, userId);
 
         LOGGER.debug("Variables count: {}, keys: {}",
@@ -283,13 +283,13 @@ public class ActivitiTaskManager implements TaskManager {
     @Override
     public void setTaskVariables(String taskId, Map<String, Object> variables) {
 
+        Objects.requireNonNull(taskId, "taskId cannot be null");
+
         LOGGER.info("Setting variables for task with id: {}", taskId);
 
         LOGGER.debug("Variables count: {}, keys: {}",
                 variables != null ? variables.size() : 0,
                 variables != null ? variables.keySet() : "null");
-
-        Objects.requireNonNull(taskId, "taskId cannot be null");
 
         if (variables != null && !variables.isEmpty()) {
             runtimeService.setVariables(taskId, variables);
@@ -318,8 +318,6 @@ public class ActivitiTaskManager implements TaskManager {
         var result = variables
                 .stream()
                 .map(obj -> {
-                    LOGGER.debug("Mapping variable: name={}, type={}, taskVariable={}, value={}",
-                            obj.getName(), obj.getType(), obj.isTaskVariable(), obj.getValue());
                     var taskVariable = new TaskVariableInstance();
                     taskVariable.setName(obj.getName());
                     taskVariable.setType(obj.getType());
