@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface ProcessManagerAdapter {
 
 
-    String startProcess(String processDefinitionKey, String businessKey,
+    ProcessInstance startProcess(String processDefinitionKey, String businessKey,
                         Map<String, Object> variables);
 
 

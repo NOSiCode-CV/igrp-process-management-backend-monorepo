@@ -6,7 +6,9 @@ import cv.nosi.igrp.runtime.core.engine.task.model.TaskFilter;
 import cv.nosi.igrp.runtime.core.engine.task.model.TaskInfo;
 import cv.nosi.igrp.runtime.core.engine.task.model.TaskVariableInstance;
 import org.activiti.api.runtime.shared.query.Pageable;
+import org.activiti.api.task.model.Task;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
+import org.activiti.api.task.model.payloads.CompleteTaskPayload;
 import org.activiti.api.task.runtime.TaskRuntime;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RuntimeService;
@@ -175,6 +177,7 @@ public class ActivitiTaskManager implements TaskManager {
 
         ofNullable(filter.getTaskDefinitionKey()).ifPresent(key -> {
             LOGGER.debug("Filtering by task definition key (as parentTaskId): {}", key);
+            // TODO 04/08/2025 15:33 fix this
             builder.withParentTaskId(key); // ⚠️ Note: parentTaskId vs taskDefinitionKey
         });
 

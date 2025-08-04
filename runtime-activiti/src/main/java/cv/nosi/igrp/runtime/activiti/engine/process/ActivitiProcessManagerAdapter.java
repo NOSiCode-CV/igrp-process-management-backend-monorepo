@@ -37,7 +37,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public String startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) {
+    public ProcessInstance startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) {
 
         Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
 
@@ -61,11 +61,25 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         LOGGER.debug("Process start payload built successfully: {}", payload);
 
-        var processInstance = processRuntime.start(payload);
+        var activitiProcessInstance = processRuntime.start(payload);
 
-        LOGGER.debug("Process instance details: {}", processInstance);
+        var igrpProcessInstance = new ProcessInstance();
+        igrpProcessInstance.setId(activitiProcessInstance.getId());
+        igrpProcessInstance.setName(activitiProcessInstance.getName());
+        igrpProcessInstance.setStartDate(activitiProcessInstance.getStartDate());
+        igrpProcessInstance.setCompletedDate(activitiProcessInstance.getCompletedDate());
+        igrpProcessInstance.setInitiator(activitiProcessInstance.getInitiator());
+        igrpProcessInstance.setProcessDefinitionId(activitiProcessInstance.getProcessDefinitionId());
+        igrpProcessInstance.setProcessDefinitionKey(activitiProcessInstance.getProcessDefinitionKey());
+        igrpProcessInstance.setBusinessKey(activitiProcessInstance.getBusinessKey());
+        igrpProcessInstance.setParentId(activitiProcessInstance.getParentId());
+        igrpProcessInstance.setProcessDefinitionVersion(activitiProcessInstance.getProcessDefinitionVersion());
+        igrpProcessInstance.setProcessDefinitionName(activitiProcessInstance.getProcessDefinitionName());
+        igrpProcessInstance.setStatus(IGRPProcessStatus.valueOf(activitiProcessInstance.getStatus().name()));
 
-        return processInstance.getId();
+        LOGGER.debug("Process instance details: {}", activitiProcessInstance);
+
+        return igrpProcessInstance;
     }
 
     @Override
@@ -130,8 +144,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
             processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
             processInstance.setBusinessKey(instance.getBusinessKey());
-            processInstance.setStartUserId(instance.getInitiator());
-            processInstance.setStartTime(ofNullable(instance.getStartDate()).map(Date::getTime).orElse(0L));
+            processInstance.setInitiator(instance.getInitiator());
+            processInstance.setStartDate(instance.getStartDate());
             processInstance.setStatus(status);
             return of(processInstance);
 
@@ -156,7 +170,6 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
             LOGGER.debug("Creating runtime process instance query");
             var query = runtimeService.createProcessInstanceQuery();
 
-            LOGGER.debug("Applying filter parameters to query");
             ofNullable(filter.getProcessDefinitionKey())
                     .ifPresent(key -> {
                         LOGGER.debug("Filtering by process definition key: {}", key);
@@ -209,8 +222,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                         processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
                         processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
                         processInstance.setBusinessKey(instance.getBusinessKey());
-                        processInstance.setStartUserId(instance.getStartUserId());
-                        processInstance.setStartTime(ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L));
+                        processInstance.setInitiator(instance.getStartUserId());
+                        processInstance.setStartDate(instance.getStartTime());
                         processInstance.setStatus(instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING);
                         return processInstance;
                     })
@@ -284,8 +297,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                     processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
                     processInstance.setProcessDefinitionKey(instance.getProcessDefinitionKey());
                     processInstance.setBusinessKey(instance.getBusinessKey());
-                    processInstance.setStartUserId(instance.getStartUserId());
-                    processInstance.setStartTime(ofNullable(instance.getStartTime()).map(Date::getTime).orElse(0L));
+                    processInstance.setInitiator(instance.getStartUserId());
+                    processInstance.setStartDate(instance.getStartTime());
                     processInstance.setStatus(resolvedStatus);
                     return processInstance;
                 })
