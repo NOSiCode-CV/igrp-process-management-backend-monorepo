@@ -45,18 +45,19 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 
             LOGGER.debug("Task found: {}", task);
 
-            var taskInfo = new TaskInfo();
-            taskInfo.setId(task.getId());
-            taskInfo.setName(task.getName());
-            taskInfo.setDescription(task.getDescription());
-            taskInfo.setProcessInstanceId(task.getProcessInstanceId());
-            taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
-            taskInfo.setAssignee(task.getAssignee());
-            taskInfo.setOwner(task.getOwner());
-            taskInfo.setCreatedTime(task.getCreateTime());
-            taskInfo.setDueDate(task.getDueDate());
-            taskInfo.setPriority(task.getPriority());
-            taskInfo.setFormKey(task.getFormKey());
+            var taskInfo = new TaskInfo(
+                    task.getId(),
+                    task.getName(),
+                    task.getDescription(),
+                    task.getProcessInstanceId(),
+                    task.getTaskDefinitionKey(),
+                    task.getAssignee(),
+                    task.getOwner(),
+                    task.getCreateTime(),
+                    task.getDueDate(),
+                    task.getPriority(),
+                    task.getFormKey()
+            );
 
             return of(taskInfo);
 
@@ -72,28 +73,25 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 
         Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
 
-        var taskInfo = new ArrayList<TaskInfo>();
-
-        taskService.createTaskQuery()
+        return taskService.createTaskQuery()
                 .processInstanceId(processInstanceId)
                 .active()
                 .list()
-                .forEach(task -> {
-                    var taskInfoRow = new TaskInfo();
-                    taskInfoRow.setId(task.getId());
-                    taskInfoRow.setName(task.getName());
-                    taskInfoRow.setDescription(task.getDescription());
-                    taskInfoRow.setProcessInstanceId(task.getProcessInstanceId());
-                    taskInfoRow.setTaskDefinitionKey(task.getTaskDefinitionKey());
-                    taskInfoRow.setAssignee(task.getAssignee());
-                    taskInfoRow.setOwner(task.getOwner());
-                    taskInfoRow.setCreatedTime(task.getCreateTime());
-                    ofNullable(task.getDueDate()).ifPresent(taskInfoRow::setDueDate);
-                    taskInfoRow.setPriority(task.getPriority());
-                    taskInfoRow.setFormKey(task.getFormKey());
-                });
-
-        return taskInfo;
+                .stream()
+                .map(task -> new TaskInfo(
+                        task.getId(),
+                        task.getName(),
+                        task.getDescription(),
+                        task.getProcessInstanceId(),
+                        task.getTaskDefinitionKey(),
+                        task.getAssignee(),
+                        task.getOwner(),
+                        task.getCreateTime(),
+                        task.getDueDate(),
+                        task.getPriority(),
+                        task.getFormKey()
+                ))
+                .toList();
     }
 
     @Override
@@ -152,19 +150,19 @@ public class ActivitiTaskQueryService implements TaskQueryService {
             return tasks
                     .stream()
                     .map(task -> {
-                        var taskInfo = new TaskInfo();
-                        taskInfo.setId(task.getId());
-                        taskInfo.setName(task.getName());
-                        taskInfo.setDescription(task.getDescription());
-                        taskInfo.setProcessInstanceId(task.getProcessInstanceId());
-                        taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
-                        taskInfo.setAssignee(task.getAssignee());
-                        taskInfo.setOwner(task.getOwner());
-                        taskInfo.setCreatedTime(task.getCreateTime());
-                        taskInfo.setDueDate(task.getDueDate());
-                        taskInfo.setPriority(task.getPriority());
-                        taskInfo.setFormKey(task.getFormKey());
-                        return taskInfo;
+                        return new TaskInfo(
+                                task.getId(),
+                                task.getName(),
+                                task.getDescription(),
+                                task.getProcessInstanceId(),
+                                task.getTaskDefinitionKey(),
+                                task.getAssignee(),
+                                task.getOwner(),
+                                task.getCreateTime(),
+                                task.getDueDate(),
+                                task.getPriority(),
+                                task.getFormKey()
+                        );
                     })
                     .toList();
         }
@@ -241,18 +239,19 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                     }
                 })
                 .map(task -> {
-                    var taskInfo = new TaskInfo();
-                    taskInfo.setId(task.getId());
-                    taskInfo.setName(task.getName());
-                    taskInfo.setDescription(task.getDescription());
-                    taskInfo.setProcessInstanceId(task.getProcessInstanceId());
-                    taskInfo.setTaskDefinitionKey(task.getTaskDefinitionKey());
-                    taskInfo.setAssignee(task.getAssignee());
-                    taskInfo.setCreatedTime(task.getCreatedDate());
-                    taskInfo.setDueDate(task.getDueDate());
-                    taskInfo.setPriority(task.getPriority());
-                    taskInfo.setFormKey(task.getFormKey());
-                    return taskInfo;
+                    return new TaskInfo(
+                            task.getId(),
+                            task.getName(),
+                            task.getDescription(),
+                            task.getProcessInstanceId(),
+                            task.getTaskDefinitionKey(),
+                            task.getAssignee(),
+                            null, // No owner in runtime task
+                            task.getCreatedDate(),
+                            task.getDueDate(),
+                            task.getPriority(),
+                            task.getFormKey()
+                    );
                 })
                 .toList();
 
@@ -278,16 +277,14 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 
         var result = variables
                 .stream()
-                .map(obj -> {
-                    var taskVariable = new TaskVariableInstance();
-                    taskVariable.setName(obj.getName());
-                    taskVariable.setType(obj.getType());
-                    taskVariable.setProcessInstanceId(obj.getProcessInstanceId());
-                    taskVariable.setTaskId(obj.getTaskId());
-                    taskVariable.setTaskVariable(obj.isTaskVariable());
-                    taskVariable.setValue(obj.getValue());
-                    return taskVariable;
-                })
+                .map(obj -> new TaskVariableInstance(
+                        obj.getName(),
+                        obj.getType(),
+                        obj.getProcessInstanceId(),
+                        obj.getTaskId(),
+                        obj.isTaskVariable(),
+                        obj.getValue()
+                ))
                 .toList();
 
         LOGGER.info("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);

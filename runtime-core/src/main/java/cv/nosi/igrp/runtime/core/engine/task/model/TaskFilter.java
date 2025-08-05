@@ -3,11 +3,8 @@ package cv.nosi.igrp.runtime.core.engine.task.model;
 public class TaskFilter {
 
     private Integer startIndex;
-
     private Integer maxResults;
-
     private String assignee;
-
     private String processInstanceId;
     private String taskName;
     private String taskDefinitionKey;
