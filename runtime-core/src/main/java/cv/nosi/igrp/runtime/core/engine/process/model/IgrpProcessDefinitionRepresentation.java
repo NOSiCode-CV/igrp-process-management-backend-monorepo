@@ -140,6 +140,27 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
         return versionHistory;
     }
 
+    @Override
+    public String toString() {
+        return "IgrpProcessDefinitionRepresentation{" +
+               " key='" + key + '\'' +
+               ", name='" + name + '\'' +
+               ", description='" + description + '\'' +
+               ", version='" + version + '\'' +
+               ", bpmnXml='" + bpmnXml + '\'' +
+               ", bpmnUrl='" + bpmnUrl + '\'' +
+               ", bpmnSourceType=" + bpmnSourceType +
+               ", resourceName='" + resourceName + '\'' +
+               ", deployed=" + deployed +
+               ", deploymentId='" + deploymentId + '\'' +
+               ", applicationBase='" + applicationBase + '\'' +
+               ", deployedAt=" + deployedAt +
+               ", variables=" + variables +
+               ", tasks=" + tasks +
+               ", versionHistory=" + versionHistory +
+               '}';
+    }
+
     public static class Builder {
         private String key;
         private String name;
@@ -239,26 +260,5 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
                     applicationBase, deployedAt, variables, tasks, versionHistory
             );
         }
-    }
-
-    @Override
-    public String toString() {
-        return "IgrpProcessDefinitionRepresentation{" +
-               " key='" + key + '\'' +
-               ", name='" + name + '\'' +
-               ", description='" + description + '\'' +
-               ", version='" + version + '\'' +
-               ", bpmnXml='" + bpmnXml + '\'' +
-               ", bpmnUrl='" + bpmnUrl + '\'' +
-               ", bpmnSourceType=" + bpmnSourceType +
-               ", resourceName='" + resourceName + '\'' +
-               ", deployed=" + deployed +
-               ", deploymentId='" + deploymentId + '\'' +
-               ", applicationBase='" + applicationBase + '\'' +
-               ", deployedAt=" + deployedAt +
-               ", variables=" + variables +
-               ", tasks=" + tasks +
-               ", versionHistory=" + versionHistory +
-               '}';
     }
 }

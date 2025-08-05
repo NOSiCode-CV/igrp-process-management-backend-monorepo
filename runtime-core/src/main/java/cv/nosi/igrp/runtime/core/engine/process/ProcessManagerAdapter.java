@@ -14,7 +14,7 @@ public interface ProcessManagerAdapter {
 
 
     ProcessInstance startProcess(String processDefinitionKey, String businessKey,
-                        Map<String, Object> variables);
+                                 Map<String, Object> variables);
 
 
     void suspendProcess(String processInstanceId);

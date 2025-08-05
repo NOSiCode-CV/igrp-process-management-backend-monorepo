@@ -1,5 +1,7 @@
 package cv.nosi.igrp.runtime.core.engine.task.model;
 
+import java.util.Date;
+
 /**
  * Classe para representar informações de uma tarefa.
  */
@@ -12,8 +14,8 @@ public class TaskInfo {
     private String taskDefinitionKey;
     private String assignee;
     private String owner;
-    private long createdTime;
-    private Long dueDate;
+    private Date createdTime;
+    private Date dueDate;
     private int priority;
     private String formKey;
 
@@ -73,19 +75,19 @@ public class TaskInfo {
         this.owner = owner;
     }
 
-    public long getCreatedTime() {
+    public Date getCreatedTime() {
         return createdTime;
     }
 
-    public void setCreatedTime(long createdTime) {
+    public void setCreatedTime(Date createdTime) {
         this.createdTime = createdTime;
     }
 
-    public Long getDueDate() {
+    public Date getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(Long dueDate) {
+    public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
     }
 
