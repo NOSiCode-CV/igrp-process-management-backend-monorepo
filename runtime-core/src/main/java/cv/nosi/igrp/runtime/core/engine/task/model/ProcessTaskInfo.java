@@ -4,6 +4,7 @@ public record ProcessTaskInfo(
         String taskKey,
         String taskName,
         IGRPTaskStatus status,
-        String processInstanceId
+        String processInstanceId,
+        String formKey
 ) {
 }

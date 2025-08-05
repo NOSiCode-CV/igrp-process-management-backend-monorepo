@@ -76,8 +76,6 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
     @Override
     public void undeploy(String deploymentId) throws ProcessDefinitionException {
 
-        LOGGER.info("Undeploying process definition with deployment id: {}", deploymentId);
-
         try {
             LOGGER.debug("Deleting deployment with id: {}, cascade: true", deploymentId);
 
@@ -92,6 +90,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
     }
 
     private ProcessDefinition getProcessDefinition(final String deploymentId) {
+
         LOGGER.debug("Querying process definition for deployment id: {}", deploymentId);
 
         var result = repositoryService.createProcessDefinitionQuery()

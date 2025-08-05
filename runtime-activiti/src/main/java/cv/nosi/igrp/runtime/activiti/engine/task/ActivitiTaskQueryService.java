@@ -156,7 +156,8 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                     task.getTaskDefinitionKey(),
                     task.getName(),
                     status,
-                    task.getProcessInstanceId()
+                    task.getProcessInstanceId(),
+                    task.getFormKey()
             ));
         }
 
@@ -180,7 +181,8 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                     task.getTaskDefinitionKey(),
                     task.getName(),
                     status,
-                    task.getProcessInstanceId()
+                    task.getProcessInstanceId(),
+                    task.getFormKey()
             ));
         }
 
