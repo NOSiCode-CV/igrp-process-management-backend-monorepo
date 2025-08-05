@@ -37,9 +37,9 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public ProcessInstance startProcess(String processDefinitionKey, String businessKey, Map<String, Object> variables) {
+    public ProcessInstance startProcess(String processDefinitionId, String businessKey, Map<String, Object> variables) {
 
-        Objects.requireNonNull(processDefinitionKey, "processDefinitionKey cannot be null");
+        Objects.requireNonNull(processDefinitionId, "processDefinitionId cannot be null");
 
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated())
@@ -47,13 +47,13 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         LOGGER.debug("Process started by {}", authentication.getName());
 
-        LOGGER.info("Starting process with definition key: {}, business key: {}", processDefinitionKey, businessKey);
+        LOGGER.info("Starting process with definition id: {}, business key: {}", processDefinitionId, businessKey);
 
         LOGGER.debug("Process variables prepared, count: {}", variables.size());
 
         var payload = ProcessPayloadBuilder
                 .start()
-                .withProcessDefinitionKey(processDefinitionKey)
+                .withProcessDefinitionId(processDefinitionId)
                 .withBusinessKey(businessKey)
                 .withVariables(variables)
                 .withVariable("startedBy", authentication.getName())
@@ -208,15 +208,13 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 query.suspended();
             }
 
-            LOGGER.debug("Executing query and mapping results");
             var results = query.list(); // TODO 29/07/2025 16:01 add pagination support
+
             LOGGER.info("Found {} process instances matching the filter criteria", results.size());
 
             return results
                     .stream()
                     .map(instance -> {
-                        LOGGER.debug("Mapping process instance: id={}, definitionId={}, key={}",
-                                instance.getId(), instance.getProcessDefinitionId(), instance.getProcessDefinitionKey());
                         var processInstance = new ProcessInstance();
                         processInstance.setId(instance.getId());
                         processInstance.setProcessDefinitionId(instance.getProcessDefinitionId());
@@ -230,12 +228,10 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                     .toList();
         }
 
-        LOGGER.debug("Processing historic process instances query");
-
         LOGGER.debug("Creating historic process instance query");
+
         var query = historyService.createHistoricProcessInstanceQuery();
 
-        LOGGER.debug("Applying filter parameters to historic query");
         ofNullable(filter.getProcessDefinitionKey())
                 .ifPresent(key -> {
                     LOGGER.debug("Filtering by process definition key: {}", key);
@@ -339,8 +335,6 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 .withProcessInstanceId(processInstanceId)
                 .withVariables(variables)
                 .build();
-
-        LOGGER.debug("Executing set variables operation for process instance id: {}", processInstanceId);
 
         processRuntime.setVariables(payload);
 
