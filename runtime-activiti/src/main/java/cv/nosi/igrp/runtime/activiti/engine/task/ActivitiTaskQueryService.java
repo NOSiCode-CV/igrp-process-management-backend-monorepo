@@ -1,10 +1,7 @@
 package cv.nosi.igrp.runtime.activiti.engine.task;
 
 import cv.nosi.igrp.runtime.core.engine.task.TaskQueryService;
-import cv.nosi.igrp.runtime.core.engine.task.model.IGRPTaskStatus;
-import cv.nosi.igrp.runtime.core.engine.task.model.TaskFilter;
-import cv.nosi.igrp.runtime.core.engine.task.model.TaskInfo;
-import cv.nosi.igrp.runtime.core.engine.task.model.TaskVariableInstance;
+import cv.nosi.igrp.runtime.core.engine.task.model.*;
 import org.activiti.api.runtime.shared.query.Pageable;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
@@ -294,6 +291,61 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                 .toList();
 
         LOGGER.info("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);
+
+        return result;
+    }
+
+    @Override
+    public List<ProcessTaskInfo> getAllTasks(String processInstanceId) {
+
+        LOGGER.info("Getting all tasks for process instance with id: {}", processInstanceId);
+
+        var result = new ArrayList<ProcessTaskInfo>();
+
+        var activeTasks = taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .list();
+
+        for (var task : activeTasks) {
+
+            var status = IGRPTaskStatus.ASSIGNED;
+
+            if (task.isSuspended())
+                status = IGRPTaskStatus.SUSPENDED;
+            else if (task.getAssignee() == null)
+                status = IGRPTaskStatus.CREATED;
+
+            result.add(new ProcessTaskInfo(
+                    task.getTaskDefinitionKey(),
+                    task.getName(),
+                    status,
+                    task.getProcessInstanceId()
+            ));
+        }
+
+        var historicTasks = historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .finished()
+                .list();
+
+        for (var task : historicTasks) {
+
+            var status = IGRPTaskStatus.COMPLETED;
+
+            // TODO 05/08/2025 10:31 set this default messages when deleting or cancelling a task
+
+            if ("deleted".equalsIgnoreCase(task.getDeleteReason()))
+                status = IGRPTaskStatus.DELETED;
+            else if ("cancelled".equalsIgnoreCase(task.getDeleteReason()))
+                status = IGRPTaskStatus.CANCELLED;
+
+            result.add(new ProcessTaskInfo(
+                    task.getTaskDefinitionKey(),
+                    task.getName(),
+                    status,
+                    task.getProcessInstanceId()
+            ));
+        }
 
         return result;
     }
