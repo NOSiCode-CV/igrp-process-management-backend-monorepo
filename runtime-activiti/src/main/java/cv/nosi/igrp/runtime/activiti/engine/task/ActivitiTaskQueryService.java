@@ -76,6 +76,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
         return taskService.createTaskQuery()
                 .processInstanceId(processInstanceId)
                 .active()
+                .orderByTaskCreateTime().asc()
                 .list()
                 .stream()
                 .map(task -> new TaskInfo(
