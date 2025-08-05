@@ -7,28 +7,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRepresentation {
+public record IgrpProcessDefinitionRepresentation(String key, String name, String description, String version,
+                                                  String bpmnXml, String bpmnUrl, String resourceName,
+                                                  BpmnSourceType bpmnSourceType, boolean deployed, String deploymentId,
+                                                  String applicationBase, LocalDateTime deployedAt,
+                                                  List<VariableRepresentation> variables,
+                                                  List<TaskRepresentation> tasks,
+                                                  List<ProcessVersionRepresentation> versionHistory) implements ProcessDefinitionRepresentation {
 
-    private final String key;
-    private final String name;
-    private final String description;
-    private final String version;
-
-    private final String bpmnXml;
-    private final String bpmnUrl;
-    private final BpmnSourceType bpmnSourceType;
-    private final String resourceName;
-
-    private final boolean deployed;
-    private final String deploymentId;
-    private final String applicationBase;
-    private final LocalDateTime deployedAt;
-
-    private final List<VariableRepresentation> variables;
-    private final List<TaskRepresentation> tasks;
-    private final List<ProcessVersionRepresentation> versionHistory;
-
-    private IgrpProcessDefinitionRepresentation(
+    public IgrpProcessDefinitionRepresentation(
             String key,
             String name,
             String description,
@@ -63,102 +50,6 @@ public class IgrpProcessDefinitionRepresentation implements ProcessDefinitionRep
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public String getKey() {
-        return key;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
-    }
-
-    @Override
-    public String getVersion() {
-        return version;
-    }
-
-    @Override
-    public String getBpmnXml() {
-        return bpmnXml;
-    }
-
-    @Override
-    public String getBpmnUrl() {
-        return bpmnUrl;
-    }
-
-    @Override
-    public BpmnSourceType getBpmnSourceType() {
-        return bpmnSourceType;
-    }
-
-    @Override
-    public String getResourceName() {
-        return resourceName;
-    }
-
-    @Override
-    public boolean isDeployed() {
-        return deployed;
-    }
-
-    @Override
-    public String getDeploymentId() {
-        return deploymentId;
-    }
-
-    @Override
-    public String getApplicationBase() {
-        return applicationBase;
-    }
-
-    @Override
-    public LocalDateTime getDeployedAt() {
-        return deployedAt;
-    }
-
-    @Override
-    public List<VariableRepresentation> getVariables() {
-        return variables;
-    }
-
-    @Override
-    public List<TaskRepresentation> getTasks() {
-        return tasks;
-    }
-
-    @Override
-    public List<ProcessVersionRepresentation> getVersionHistory() {
-        return versionHistory;
-    }
-
-    @Override
-    public String toString() {
-        return "IgrpProcessDefinitionRepresentation{" +
-               " key='" + key + '\'' +
-               ", name='" + name + '\'' +
-               ", description='" + description + '\'' +
-               ", version='" + version + '\'' +
-               ", bpmnXml='" + bpmnXml + '\'' +
-               ", bpmnUrl='" + bpmnUrl + '\'' +
-               ", bpmnSourceType=" + bpmnSourceType +
-               ", resourceName='" + resourceName + '\'' +
-               ", deployed=" + deployed +
-               ", deploymentId='" + deploymentId + '\'' +
-               ", applicationBase='" + applicationBase + '\'' +
-               ", deployedAt=" + deployedAt +
-               ", variables=" + variables +
-               ", tasks=" + tasks +
-               ", versionHistory=" + versionHistory +
-               '}';
     }
 
     public static class Builder {

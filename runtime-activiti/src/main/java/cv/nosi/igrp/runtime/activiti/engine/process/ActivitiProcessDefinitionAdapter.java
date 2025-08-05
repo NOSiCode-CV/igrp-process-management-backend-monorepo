@@ -34,18 +34,18 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
         try {
 
-            var resourceName = Objects.requireNonNull(processDefinitionRepresentation.getResourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");
+            var resourceName = Objects.requireNonNull(processDefinitionRepresentation.resourceName(), "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml");
 
             var deployment = repositoryService.createDeployment()
-                    .addString(resourceName, processDefinitionRepresentation.getBpmnXml())
-                    .name(processDefinitionRepresentation.getName())
-                    .key(Objects.requireNonNull(processDefinitionRepresentation.getKey(), "The key is required for deployment."))
-                    .tenantId(processDefinitionRepresentation.getApplicationBase())
+                    .addString(resourceName, processDefinitionRepresentation.bpmnXml())
+                    .name(processDefinitionRepresentation.name())
+                    .key(Objects.requireNonNull(processDefinitionRepresentation.key(), "The key is required for deployment."))
+                    .tenantId(processDefinitionRepresentation.applicationBase())
                     .deploy();
 
             LOGGER.debug("Deployment created: {}", deployment);
 
-            final var bpmnXml = getBpmnXml(deployment.getId(), processDefinitionRepresentation.getResourceName());
+            final var bpmnXml = getBpmnXml(deployment.getId(), processDefinitionRepresentation.resourceName());
 
             LOGGER.debug("BPMN XML retrieved: {}", bpmnXml);
 
@@ -56,7 +56,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                     .description(deployment.getName())
                     .version(String.valueOf(deployment.getVersion()))
                     .bpmnXml(bpmnXml)
-                    .resourceName(processDefinitionRepresentation.getResourceName())
+                    .resourceName(processDefinitionRepresentation.resourceName())
                     .applicationBase(deployment.getTenantId())
                     .bpmnSourceType(BpmnSourceType.INLINE_XML)
                     .deployed(true)

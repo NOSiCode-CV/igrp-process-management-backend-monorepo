@@ -9,34 +9,34 @@ import java.util.List;
 
 public interface ProcessDefinitionRepresentation {
 
-    String getKey();
+    String key();
 
-    String getName();
+    String name();
 
-    String getDescription();
+    String description();
 
-    String getVersion();
+    String version();
 
-    BpmnSourceType getBpmnSourceType();
+    BpmnSourceType bpmnSourceType();
 
-    String getBpmnXml();
+    String bpmnXml();
 
-    String getBpmnUrl();
+    String bpmnUrl();
 
-    String getResourceName();
+    String resourceName();
 
-    boolean isDeployed();
+    boolean deployed();
 
-    String getDeploymentId();
+    String deploymentId();
 
-    LocalDateTime getDeployedAt();
+    LocalDateTime deployedAt();
 
-    List<VariableRepresentation> getVariables();
+    List<VariableRepresentation> variables();
 
-    List<TaskRepresentation> getTasks();
+    List<TaskRepresentation> tasks();
 
-    List<ProcessVersionRepresentation> getVersionHistory();
+    List<ProcessVersionRepresentation> versionHistory();
 
-    String getApplicationBase();
+    String applicationBase();
 }
 
