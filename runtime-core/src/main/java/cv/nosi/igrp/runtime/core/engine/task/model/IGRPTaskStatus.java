@@ -6,5 +6,6 @@ public enum IGRPTaskStatus {
     SUSPENDED,
     COMPLETED,
     CANCELLED,
-    DELETED
+    DELETED,
+    PENDING
 }

@@ -7,8 +7,12 @@ import cv.nosi.igrp.runtime.core.engine.task.model.TaskInfo;
 import cv.nosi.igrp.runtime.core.engine.task.model.TaskVariableInstance;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
+import org.activiti.bpmn.model.UserTask;
 import org.activiti.engine.HistoryService;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricTaskInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -29,11 +34,15 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     private final TaskRuntime taskRuntime;
     private final TaskService taskService;
     private final HistoryService historyService;
+    private final RuntimeService runtimeService;
+    private final RepositoryService repositoryService;
 
-    public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService) {
+    public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
         this.taskRuntime = taskRuntime;
         this.taskService = taskService;
         this.historyService = historyService;
+        this.runtimeService = runtimeService;
+        this.repositoryService = repositoryService;
     }
 
     @Override
@@ -127,7 +136,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                 ))
                 .toList();
 
-        LOGGER.info("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);
+        LOGGER.debug("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);
 
         return result;
     }
@@ -135,55 +144,53 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     @Override
     public List<ProcessTaskInfo> getAllTasks(String processInstanceId) {
 
-        LOGGER.info("Getting all tasks for process instance with id: {}", processInstanceId);
+        LOGGER.debug("Getting all tasks for process instance with id: {}", processInstanceId);
 
         var result = new ArrayList<ProcessTaskInfo>();
 
-        var activeTasks = taskService.createTaskQuery()
-                .processInstanceId(processInstanceId)
-                .list();
-
-        for (var task : activeTasks) {
-
-            var status = IGRPTaskStatus.ASSIGNED;
-
-            if (task.isSuspended())
-                status = IGRPTaskStatus.SUSPENDED;
-            else if (task.getAssignee() == null)
-                status = IGRPTaskStatus.CREATED;
-
-            result.add(new ProcessTaskInfo(
-                    task.getTaskDefinitionKey(),
-                    task.getName(),
-                    status,
-                    task.getProcessInstanceId(),
-                    task.getFormKey()
-            ));
-        }
-
-        var historicTasks = historyService.createHistoricTaskInstanceQuery()
+        // 1. Get completed tasks from history
+        var completedTasks = historyService
+                .createHistoricTaskInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .finished()
                 .list();
 
-        for (var task : historicTasks) {
+        // Create a set of task definition keys that were completed
+        var completedTaskKeys = completedTasks.stream()
+                .map(HistoricTaskInstance::getTaskDefinitionKey)
+                .collect(Collectors.toSet());
 
-            var status = IGRPTaskStatus.COMPLETED;
+        // 2. Get process definition from the instance
+        var instance = runtimeService.createProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult();
+        if (instance == null) {
+            LOGGER.warn("Process instance with ID {} not found", processInstanceId);
+            return result;
+        }
 
-            // TODO 05/08/2025 10:31 set this default messages when deleting or cancelling a task
+        // 3. Get BPMN model
+        var process = repositoryService.getBpmnModel(instance.getProcessDefinitionId()).getMainProcess();
 
-            if ("deleted".equalsIgnoreCase(task.getDeleteReason()))
-                status = IGRPTaskStatus.DELETED;
-            else if ("cancelled".equalsIgnoreCase(task.getDeleteReason()))
-                status = IGRPTaskStatus.CANCELLED;
+        // 4. Extract user tasks and map status
+        for (var element : process.getFlowElements()) {
 
-            result.add(new ProcessTaskInfo(
-                    task.getTaskDefinitionKey(),
-                    task.getName(),
-                    status,
-                    task.getProcessInstanceId(),
-                    task.getFormKey()
-            ));
+            if (element instanceof UserTask userTask) {
+
+                var taskKey = userTask.getId();
+
+                var status = completedTaskKeys.contains(taskKey)
+                        ? IGRPTaskStatus.COMPLETED
+                        : IGRPTaskStatus.PENDING;
+
+                result.add(new ProcessTaskInfo(
+                        taskKey,
+                        userTask.getName(),
+                        status,
+                        processInstanceId,
+                        userTask.getFormKey()
+                ));
+            }
         }
 
         return result;

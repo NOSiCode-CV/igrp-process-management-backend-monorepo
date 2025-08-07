@@ -34,7 +34,7 @@ public class ActivitiTaskActionService implements TaskActionService {
 
         Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.info("Completing task with id: {}, user: {}", taskId, userId);
+        LOGGER.debug("Completing task with id: {}, user: {}", taskId, userId);
 
         LOGGER.debug("Variables count: {}, keys: {}",
                 variables != null ? variables.size() : 0,
