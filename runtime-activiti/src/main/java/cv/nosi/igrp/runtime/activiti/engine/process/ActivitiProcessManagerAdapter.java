@@ -3,6 +3,7 @@ package cv.nosi.igrp.runtime.activiti.engine.process;
 import cv.nosi.igrp.runtime.core.engine.process.ProcessManagerAdapter;
 import cv.nosi.igrp.runtime.core.engine.process.model.*;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
+import org.activiti.api.process.model.payloads.StartProcessPayload;
 import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
@@ -11,6 +12,7 @@ import org.activiti.engine.history.HistoricProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -129,39 +131,62 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         LOGGER.info("Process instance with id: {} terminated successfully", processInstanceId);
     }
 
-    @Override
+
+   @Override
     public Optional<ProcessInstance> getProcessInstance(String processInstanceId) {
-        LOGGER.info("Retrieving process instance with id: {}", processInstanceId);
-        try {
+       LOGGER.info("Retrieving process instance with id: {}", processInstanceId);
 
-            var instance = processRuntime.processInstance(processInstanceId);
+       try {
+           var instance = runtimeService
+                   .createProcessInstanceQuery()
+                   .processInstanceId(processInstanceId)
+                   .singleResult();
 
-            LOGGER.debug("Process instance retrieved successfully: {}", instance);
+           if (instance == null) {
+               LOGGER.info("Process instance with id: {} not found", processInstanceId);
+               return Optional.empty();
+           }
 
-            var status = IGRPProcessStatus.valueOf(instance.getStatus().name());
+           ProcessInstance processInstance = getProcessInstance(instance);
 
-            var processInstance = new ProcessInstance(
-                    instance.getId(),
-                    instance.getName(),
-                    instance.getStartDate(),
-                    instance.getCompletedDate(),
-                    instance.getInitiator(),
-                    instance.getProcessDefinitionId(),
-                    instance.getProcessDefinitionKey(),
-                    instance.getBusinessKey(),
-                    instance.getParentId(),
-                    instance.getProcessDefinitionVersion(),
-                    instance.getProcessDefinitionName(),
-                    status
-            );
-            return of(processInstance);
+           LOGGER.debug("Process instance retrieved successfully: {}", processInstance);
+           return Optional.of(processInstance);
 
-        } catch (Exception e) {
-            LOGGER.info("Process instance with id: {} not found or error occurred", processInstanceId);
-            LOGGER.debug("Error getting process instance with id: {}", processInstanceId, e);
-            return empty();
-        }
+       } catch (Exception e) {
+           LOGGER.error("Error getting process instance with id: {}", processInstanceId, e);
+           return Optional.empty();
+       }
     }
+
+
+    private ProcessInstance getProcessInstance(org.activiti.engine.runtime.ProcessInstance instance) {
+        IGRPProcessStatus status = IGRPProcessStatus.RUNNING;
+
+        if (instance.isSuspended()) {
+            status = IGRPProcessStatus.SUSPENDED;
+        } else if (instance.isEnded()) {
+            status = IGRPProcessStatus.COMPLETED;
+        }
+
+        // completedDate não disponível aqui (runtimeService)
+        // initiator não disponível no runtimeService
+        // processDefinitionName não disponível aqui
+        return new ProcessInstance(
+                instance.getId(),
+                instance.getName(),
+                instance.getStartTime(),
+                null, // completedDate não disponível aqui (runtimeService)
+                null, // initiator não disponível no runtimeService
+                instance.getProcessDefinitionId(),
+                instance.getProcessDefinitionKey(),
+                instance.getBusinessKey(),
+                instance.getParentId(),
+                instance.getProcessDefinitionVersion(),
+                null, // processDefinitionName não disponível aqui
+                status
+        );
+    }
+
 
     @Override
     public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
