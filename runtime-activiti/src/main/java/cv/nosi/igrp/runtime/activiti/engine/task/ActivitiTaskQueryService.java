@@ -145,7 +145,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     @Override
     public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
 
-        LOGGER.debug("Getting all tasks for process instance with id: {}", processInstanceId);
+        LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
 
         var completedTaskKeys = historyService.createHistoricTaskInstanceQuery()
                 .processInstanceId(processInstanceId)
@@ -191,13 +191,15 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                 else if (currentTaskKeys.contains(taskKey))
                     status = IGRPTaskStatus.CURRENT;
 
-                result.add(new ProcessTaskInfo(
+                var processTaskInfo = new ProcessTaskInfo(
                         taskKey,
                         userTask.getName(),
                         status,
                         processInstanceId,
                         userTask.getFormKey()
-                ));
+                );
+
+                result.add(processTaskInfo);
             }
         });
 
