@@ -15,5 +15,5 @@ public interface TaskQueryService {
 
     List<TaskInfo> getActiveTaskInstances(String processInstanceId);
 
-    List<ProcessTaskInfo> getAllTasks(String processInstanceId);
+    List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId);
 }

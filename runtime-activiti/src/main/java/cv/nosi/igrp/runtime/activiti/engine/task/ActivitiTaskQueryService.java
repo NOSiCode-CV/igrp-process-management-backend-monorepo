@@ -13,6 +13,7 @@ import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -142,46 +143,53 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     }
 
     @Override
-    public List<ProcessTaskInfo> getAllTasks(String processInstanceId) {
+    public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
 
         LOGGER.debug("Getting all tasks for process instance with id: {}", processInstanceId);
 
-        var result = new ArrayList<ProcessTaskInfo>();
-
-        // 1. Get completed tasks from history
-        var completedTasks = historyService
-                .createHistoricTaskInstanceQuery()
+        var completedTaskKeys = historyService.createHistoricTaskInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .finished()
-                .list();
-
-        // Create a set of task definition keys that were completed
-        var completedTaskKeys = completedTasks.stream()
+                .list()
+                .stream()
                 .map(HistoricTaskInstance::getTaskDefinitionKey)
                 .collect(Collectors.toSet());
 
-        // 2. Get process definition from the instance
+        var currentTaskKeys = taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .active()
+                .list()
+                .stream()
+                .map(Task::getTaskDefinitionKey)
+                .collect(Collectors.toSet());
+
         var instance = runtimeService.createProcessInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .singleResult();
+
         if (instance == null) {
             LOGGER.warn("Process instance with ID {} not found", processInstanceId);
-            return result;
+            return List.of();
         }
 
-        // 3. Get BPMN model
-        var process = repositoryService.getBpmnModel(instance.getProcessDefinitionId()).getMainProcess();
+        var flowElements = repositoryService.getBpmnModel(instance.getProcessDefinitionId())
+                .getMainProcess()
+                .getFlowElements();
 
-        // 4. Extract user tasks and map status
-        for (var element : process.getFlowElements()) {
+        var result = new ArrayList<ProcessTaskInfo>();
+
+        flowElements.forEach(element -> {
 
             if (element instanceof UserTask userTask) {
 
                 var taskKey = userTask.getId();
 
-                var status = completedTaskKeys.contains(taskKey)
-                        ? IGRPTaskStatus.COMPLETED
-                        : IGRPTaskStatus.PENDING;
+                var status = IGRPTaskStatus.PENDING;
+
+                if (completedTaskKeys.contains(taskKey))
+                    status = IGRPTaskStatus.COMPLETED;
+                else if (currentTaskKeys.contains(taskKey))
+                    status = IGRPTaskStatus.CURRENT;
 
                 result.add(new ProcessTaskInfo(
                         taskKey,
@@ -191,7 +199,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                         userTask.getFormKey()
                 ));
             }
-        }
+        });
 
         return result;
     }

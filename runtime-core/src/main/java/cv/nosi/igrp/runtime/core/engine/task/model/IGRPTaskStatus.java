@@ -7,5 +7,6 @@ public enum IGRPTaskStatus {
     COMPLETED,
     CANCELLED,
     DELETED,
-    PENDING
+    PENDING, // todo this to another enum
+    CURRENT // todo this to another enum
 }
