@@ -6,6 +6,7 @@ import cv.nosi.igrp.runtime.core.engine.process.exception.ProcessDefinitionExcep
 import cv.nosi.igrp.runtime.core.engine.process.model.BpmnSourceType;
 import cv.nosi.igrp.runtime.core.engine.process.model.IgrpProcessDefinitionRepresentation;
 import org.activiti.engine.RepositoryService;
+import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
         this.repositoryService = repositoryService;
     }
 
-    @Override
+   /* @Override
     public ProcessDefinitionRepresentation deploy(ProcessDefinitionRepresentation processDefinitionRepresentation) throws ProcessDefinitionException {
 
         LOGGER.info("Deploying process definition representation: {}", processDefinitionRepresentation);
@@ -71,7 +72,67 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
             LOGGER.error("Failed to deploy BPMN XML", ex);
             throw new ProcessDefinitionException("An error occurred when deploy a new process definition bpmn xml", ex);
         }
+    }*/
+
+    @Override
+    public ProcessDefinitionRepresentation deploy(ProcessDefinitionRepresentation processDefinitionRepresentation) throws ProcessDefinitionException {
+        LOGGER.info("Deploying process definition representation: {}", processDefinitionRepresentation);
+
+        try {
+            // Validate required fields
+            String resourceName = Objects.requireNonNull(
+                    processDefinitionRepresentation.resourceName(),
+                    "The resource name is required for deployment. Ex: dynamicProcess.bpmn20.xml"
+            );
+
+            String bpmnXml = processDefinitionRepresentation.bpmnXml();
+            String processKey = Objects.requireNonNull(
+                    processDefinitionRepresentation.key(),
+                    "The key is required for deployment."
+            );
+
+            // Create the deployment in the Activiti repository
+            Deployment deployment = repositoryService.createDeployment()
+                    .addString(resourceName, bpmnXml)
+                    .name(processDefinitionRepresentation.name())
+                    .key(processKey) // Note: this is the deployment key, not the process key
+                    .tenantId(processDefinitionRepresentation.applicationBase())
+                    .deploy();
+
+            // Fetch the deployed process definition associated with this deployment
+            ProcessDefinition processDefinition = repositoryService
+                    .createProcessDefinitionQuery()
+                    .deploymentId(deployment.getId())
+                    .singleResult();
+
+            // Optionally re-fetch the deployed BPMN XML (if needed for validation or return)
+            String deployedBpmnXml = this.getBpmnXml(deployment.getId(), resourceName);
+
+            // Build the internal representation to return to the application
+            IgrpProcessDefinitionRepresentation result = IgrpProcessDefinitionRepresentation.builder()
+                    .key(processDefinition.getKey())
+                    .deploymentId(deployment.getId())
+                    .name(processDefinition.getName())
+                    .description(processDefinition.getDescription())
+                    .version(String.valueOf(processDefinition.getVersion()))
+                    .bpmnXml(deployedBpmnXml)
+                    .resourceName(resourceName)
+                    .applicationBase(processDefinition.getTenantId())
+                    .bpmnSourceType(BpmnSourceType.INLINE_XML)
+                    .deployed(true)
+                    .deployedAt(deployment.getDeploymentTime().toInstant()
+                            .atZone(ZoneId.systemDefault()).toLocalDateTime())
+                    .build();
+
+            LOGGER.debug("Process definition representation created: {}", result);
+            return result;
+
+        } catch (Exception ex) {
+            LOGGER.error("Failed to deploy BPMN XML", ex);
+            throw new ProcessDefinitionException("An error occurred when deploying a new process definition BPMN XML", ex);
+        }
     }
+
 
     @Override
     public void undeploy(String deploymentId) throws ProcessDefinitionException {
