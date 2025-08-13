@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>cv.nosi.igrp</groupId>
+    <groupId>cv.igrp.framework</groupId>
     <artifactId>igrp-process-management-backend</artifactId>
     <version>0.1.0-beta.1</version>
     <packaging>pom</packaging>
@@ -37,13 +37,13 @@
         <dependencies>
 
             <dependency>
-                <groupId>cv.nosi.igrp</groupId>
+                <groupId>cv.igrp.framework</groupId>
                 <artifactId>runtime-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>cv.nosi.igrp</groupId>
+                <groupId>cv.igrp.framework</groupId>
                 <artifactId>runtime-activiti</artifactId>
                 <version>${project.version}</version>
             </dependency>
