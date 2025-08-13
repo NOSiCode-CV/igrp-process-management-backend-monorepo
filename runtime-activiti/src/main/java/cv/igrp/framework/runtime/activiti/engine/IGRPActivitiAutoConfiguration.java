@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ComponentScan(basePackages = {
-        "cv.nosi.igrp.runtime.activiti.engine.process",
-        "cv.nosi.igrp.runtime.activiti.engine.task"
+        "cv.igrp.framework.runtime.activiti.engine.process",
+        "cv.igrp.framework.runtime.activiti.engine.task"
 })
 public class IGRPActivitiAutoConfiguration {
 }
