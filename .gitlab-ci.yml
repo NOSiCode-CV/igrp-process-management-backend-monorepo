@@ -10,10 +10,8 @@ trigger-deploy:
     - set -e
       - echo "Triggering Maven Deploy Repository IGRP Process Management Backend Monorepo..."
     - apk add --no-cache curl
-    # Check required variables
     - '[ -z "$GITLAB_DEPLOY_TOKEN" ] && echo "Missing GITLAB_DEPLOY_TOKEN" && exit 1'
     - '[ -z "$GITLAB_DEPLOY_PROJECT_ID" ] && echo "Missing GITLAB_DEPLOY_PROJECT_ID" && exit 1'
-    # Trigger the downstream pipeline
     - |
       RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.txt \
         -X POST \
