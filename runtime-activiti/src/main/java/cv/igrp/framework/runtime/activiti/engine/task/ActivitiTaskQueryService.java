@@ -125,7 +125,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 
         LOGGER.debug("Retrieved {} variables for task id: {}", variables.size(), taskId);
 
-        var result = variables
+        return variables
                 .stream()
                 .map(obj -> new TaskVariableInstance(
                         obj.getName(),
@@ -136,10 +136,6 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                         obj.getValue()
                 ))
                 .toList();
-
-        LOGGER.debug("Successfully retrieved {} variables for task with id: {}", result.size(), taskId);
-
-        return result;
     }
 
     @Override
