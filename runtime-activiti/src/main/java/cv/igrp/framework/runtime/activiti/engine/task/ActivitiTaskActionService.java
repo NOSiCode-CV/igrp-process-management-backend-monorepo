@@ -36,11 +36,11 @@ public class ActivitiTaskActionService implements TaskActionService {
 
         LOGGER.debug("Completing task with id: {}, user: {}", taskId, userId);
 
-        LOGGER.debug("Variables count: {}, keys: {}",
-                variables != null ? variables.size() : 0,
-                variables != null ? variables.keySet() : "null");
+        if (variables != null && !variables.isEmpty())
+            LOGGER.debug("Variables: {}", variables);
 
         var variablesPayload = variables != null ? new HashMap<>(variables) : new HashMap<String, Object>();
+        variablesPayload.put("igrpUserId", userId);
 
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)
@@ -59,11 +59,8 @@ public class ActivitiTaskActionService implements TaskActionService {
 
         LOGGER.info("Setting variables for task with id: {}", taskId);
 
-        LOGGER.debug("Variables count: {}, keys: {}",
-                variables != null ? variables.size() : 0,
-                variables != null ? variables.keySet() : "null");
-
         if (variables != null && !variables.isEmpty()) {
+            LOGGER.debug("Variables: {}", variables);
             runtimeService.setVariables(taskId, variables);
             LOGGER.info("Variables successfully set for task with id: {}", taskId);
             return;
