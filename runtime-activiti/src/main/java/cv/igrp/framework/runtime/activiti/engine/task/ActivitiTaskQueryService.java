@@ -1,10 +1,7 @@
 package cv.igrp.framework.runtime.activiti.engine.task;
 
 import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
-import cv.igrp.framework.runtime.core.engine.task.model.IGRPTaskStatus;
-import cv.igrp.framework.runtime.core.engine.task.model.ProcessTaskInfo;
-import cv.igrp.framework.runtime.core.engine.task.model.TaskInfo;
-import cv.igrp.framework.runtime.core.engine.task.model.TaskVariableInstance;
+import cv.igrp.framework.runtime.core.engine.task.model.*;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
 import org.activiti.bpmn.model.UserTask;
@@ -200,5 +197,29 @@ public class ActivitiTaskQueryService implements TaskQueryService {
         });
 
         return result;
+    }
+
+    @Override
+    public List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey) {
+
+        LOGGER.debug("Getting tasks for BPMN progress drawing, processDefinitionKey: {}", processDefinitionKey);
+
+        return repositoryService.getBpmnModel(processDefinitionKey)
+                .getMainProcess()
+                .getFlowElements()
+                .stream()
+                .filter(element -> element instanceof UserTask)
+                .map(ut -> {
+
+                    var userTask = (UserTask) ut;
+
+                    return new ProcessArtifact(
+                            userTask.getId(),
+                            userTask.getName(),
+                            userTask.getFormKey()
+                    );
+
+                })
+                .toList();
     }
 }
