@@ -14,6 +14,10 @@ public interface TaskQueryService {
 
     List<TaskVariableInstance> getTaskVariables(String taskId);
 
+	List<TaskVariableInstance> getRuntimeTaskVariables(String taskId);
+
+	List<TaskVariableInstance> getHistoricTaskVariables(String taskId);
+
     List<TaskInfo> getActiveTaskInstances(String processInstanceId);
 
     List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId);

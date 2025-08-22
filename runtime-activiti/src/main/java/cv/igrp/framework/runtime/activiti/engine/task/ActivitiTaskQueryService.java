@@ -10,6 +10,7 @@ import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     private final RuntimeService runtimeService;
     private final RepositoryService repositoryService;
 
-    public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
+	public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
         this.taskRuntime = taskRuntime;
         this.taskService = taskService;
         this.historyService = historyService;
@@ -103,34 +104,6 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                         task.getDueDate(),
                         task.getPriority(),
                         task.getFormKey()
-                ))
-                .toList();
-    }
-
-    @Override
-    public List<TaskVariableInstance> getTaskVariables(String taskId) {
-
-        Objects.requireNonNull(taskId, "taskId cannot be null");
-
-        LOGGER.debug("Getting variables for task with id: {}", taskId);
-
-        var payload = TaskPayloadBuilder.variables()
-                .withTaskId(taskId)
-                .build();
-
-        var variables = taskRuntime.variables(payload);
-
-        LOGGER.debug("Retrieved {} variables for task id: {}", variables.size(), taskId);
-
-        return variables
-                .stream()
-                .map(obj -> new TaskVariableInstance(
-                        obj.getName(),
-                        obj.getType(),
-                        obj.getProcessInstanceId(),
-                        obj.getTaskId(),
-                        obj.isTaskVariable(),
-                        obj.getValue()
                 ))
                 .toList();
     }
@@ -222,4 +195,69 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                 })
                 .toList();
     }
+
+	@Override
+	public List<TaskVariableInstance> getTaskVariables(String taskId) {
+		List<TaskVariableInstance> runtimeVariables = new ArrayList<>(getRuntimeTaskVariables(taskId));
+		List<TaskVariableInstance> historicVariables = new ArrayList<>(getHistoricTaskVariables(taskId));
+		runtimeVariables.addAll(historicVariables);
+		return runtimeVariables;
+	}
+
+	@Override
+	public List<TaskVariableInstance> getRuntimeTaskVariables(String taskId) {
+		Objects.requireNonNull(taskId, "taskId cannot be null");
+
+		LOGGER.debug("Getting variables for task with id: {}", taskId);
+
+		try {
+			var payload = TaskPayloadBuilder.variables()
+					.withTaskId(taskId)
+					.build();
+
+			var variables = taskRuntime.variables(payload);
+
+			LOGGER.debug("Retrieved {} runtime variables for task id: {}", variables.size(), taskId);
+
+			return variables.stream()
+					.map(obj -> new TaskVariableInstance(
+							obj.getName(),
+							obj.getType(),
+							obj.getProcessInstanceId(),
+							obj.getTaskId(),
+							obj.isTaskVariable(),
+							obj.getValue()
+					))
+					.toList();
+
+		} catch (Exception e) {
+			LOGGER.debug("No runtime variables found for task id {} (probably completed). Returning empty list.", taskId);
+			return new ArrayList<>();
+		}
+	}
+
+	public List<TaskVariableInstance> getHistoricTaskVariables(String taskId) {
+		Objects.requireNonNull(taskId, "taskId cannot be null");
+
+		LOGGER.debug("Getting historic variables for task with id: {}", taskId);
+
+		List<HistoricVariableInstance> vars =
+				historyService.createHistoricVariableInstanceQuery()
+						.taskId(taskId)
+						.list();
+
+		LOGGER.debug("Retrieved {} historic variables for task id: {}", vars.size(), taskId);
+
+		return vars.stream()
+				.map(obj -> new TaskVariableInstance(
+						obj.getVariableName(),
+						obj.getVariableTypeName(),
+						obj.getProcessInstanceId(),
+						obj.getTaskId(),
+						true,
+						obj.getValue()
+				))
+				.toList();
+	}
+
 }
