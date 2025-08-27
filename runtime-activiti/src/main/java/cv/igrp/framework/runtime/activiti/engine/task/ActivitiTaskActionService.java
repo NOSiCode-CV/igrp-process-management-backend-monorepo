@@ -36,24 +36,8 @@ public class ActivitiTaskActionService implements TaskActionService {
 
         LOGGER.debug("Completing task with id: {}", taskId);
 
-        if (variables != null && !variables.isEmpty()) {
-
+        if (variables != null)
 			LOGGER.debug("Variables: {}", variables);
-
-			Map<String, Object> globalVariables = new HashMap<>();
-			variables.forEach((k, v) -> {
-				if (k.startsWith("global_")) {
-					String newKey = k.substring("global_".length());
-					globalVariables.put(newKey, v);
-				}
-			});
-
-			if(!globalVariables.isEmpty()){
-				var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-				runtimeService.setVariables(task.getProcessInstanceId(), globalVariables);
-			}
-
-		}
 
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)

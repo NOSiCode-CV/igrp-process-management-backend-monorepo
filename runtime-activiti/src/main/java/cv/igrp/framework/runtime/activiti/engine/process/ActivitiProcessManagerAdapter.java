@@ -365,13 +365,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 variables != null ? variables.keySet() : "null");
 
         LOGGER.debug("Building set variables payload for process instance id: {}", processInstanceId);
-        var payload = ProcessPayloadBuilder
-                .setVariables()
-                .withProcessInstanceId(processInstanceId)
-                .withVariables(variables)
-                .build();
 
-        processRuntime.setVariables(payload);
+		runtimeService.setVariables(processInstanceId, variables);
 
         LOGGER.info("Variables set successfully for process instance with id: {}", processInstanceId);
     }
