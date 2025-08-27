@@ -131,59 +131,79 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
 
     @Override
-    public Optional<ProcessInstance> getProcessInstance(String processInstanceId) {
+	public Optional<ProcessInstance> getProcessInstance(String processInstanceId) {
+		LOGGER.info("Retrieving process instance with id: {}", processInstanceId);
 
-        LOGGER.info("Retrieving process instance with id: {}", processInstanceId);
+		try {
 
-        try {
+			var runtimeInstance = runtimeService.createProcessInstanceQuery()
+					.processInstanceId(processInstanceId)
+					.singleResult();
 
-            var instance = runtimeService.createProcessInstanceQuery()
-                    .processInstanceId(processInstanceId)
-                    .singleResult();
+			if (runtimeInstance != null) {
+				IGRPProcessStatus status = IGRPProcessStatus.RUNNING;
+				if (runtimeInstance.isSuspended()) {
+					status = IGRPProcessStatus.SUSPENDED;
+				}
 
-            if (instance == null) {
-                LOGGER.info("Process instance with id: {} not found", processInstanceId);
-                return empty();
-            }
+				var processInstance = new ProcessInstance(
+						runtimeInstance.getId(),
+						runtimeInstance.getName(),
+						runtimeInstance.getStartTime(),
+						null, // still running, so no endDate
+						runtimeInstance.getStartUserId(),
+						runtimeInstance.getProcessDefinitionId(),
+						runtimeInstance.getProcessDefinitionKey(),
+						runtimeInstance.getBusinessKey(),
+						runtimeInstance.getParentId(),
+						runtimeInstance.getProcessDefinitionVersion(),
+						runtimeInstance.getProcessDefinitionName(),
+						status
+				);
 
-            var endDate = ofNullable(historyService.createHistoricProcessInstanceQuery()
-                    .processInstanceId(processInstanceId)
-                    .singleResult())
-                    .map(HistoricProcessInstance::getEndTime)
-                    .orElse(null);
+				LOGGER.debug("Active process instance retrieved: {}", processInstance);
+				return Optional.of(processInstance);
+			}
 
-            var status = IGRPProcessStatus.RUNNING;
+			var historicInstance = historyService.createHistoricProcessInstanceQuery()
+					.processInstanceId(processInstanceId)
+					.singleResult();
 
-            if (instance.isSuspended())
-                status = IGRPProcessStatus.SUSPENDED;
-            else if (instance.isEnded())
-                status = IGRPProcessStatus.COMPLETED;
+			if (historicInstance != null) {
+				IGRPProcessStatus status = historicInstance.getEndTime() != null
+						? IGRPProcessStatus.COMPLETED
+						: IGRPProcessStatus.SUSPENDED;
 
-            var processInstance = new ProcessInstance(
-                    instance.getId(),
-                    instance.getName(),
-                    instance.getStartTime(),
-                    endDate,
-                    instance.getStartUserId(),
-                    instance.getProcessDefinitionId(),
-                    instance.getProcessDefinitionKey(),
-                    instance.getBusinessKey(),
-                    instance.getParentId(),
-                    instance.getProcessDefinitionVersion(),
-                    instance.getProcessDefinitionName(),
-                    status
-            );
+				var processInstance = new ProcessInstance(
+						historicInstance.getId(),
+						historicInstance.getName(),
+						historicInstance.getStartTime(),
+						historicInstance.getEndTime(),
+						historicInstance.getStartUserId(),
+						historicInstance.getProcessDefinitionId(),
+						historicInstance.getProcessDefinitionKey(),
+						historicInstance.getBusinessKey(),
+						historicInstance.getSuperProcessInstanceId(),
+						historicInstance.getProcessDefinitionVersion(),
+						historicInstance.getProcessDefinitionName(),
+						status
+				);
 
-            LOGGER.debug("Process instance retrieved successfully: {}", processInstance);
-            return of(processInstance);
+				LOGGER.debug("Historic process instance retrieved: {}", processInstance);
+				return Optional.of(processInstance);
+			}
 
-        } catch (Exception e) {
-            LOGGER.error("Error getting process instance with id: {}", processInstanceId, e);
-            return empty();
-        }
-    }
+			LOGGER.info("Process instance with id: {} not found", processInstanceId);
+			return Optional.empty();
 
-    @Override
+		} catch (Exception e) {
+			LOGGER.error("Error getting process instance with id: {}", processInstanceId, e);
+			return Optional.empty();
+		}
+	}
+
+
+	@Override
     public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
         LOGGER.info("Listing process instances with filter: status={}, definitionKey={}, businessKey={}",
                 filter.getStatus(), filter.getProcessDefinitionKey(), filter.getBusinessKey());
