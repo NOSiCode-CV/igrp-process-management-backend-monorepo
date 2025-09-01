@@ -133,12 +133,25 @@ public class ActivitiTaskQueryService implements TaskQueryService {
                 .processInstanceId(processInstanceId)
                 .singleResult();
 
-        if (instance == null) {
-            LOGGER.warn("Process instance with ID {} not found", processInstanceId);
-            return List.of();
-        }
+		String processDefinitionId = null;
 
-        var flowElements = repositoryService.getBpmnModel(instance.getProcessDefinitionId())
+		if (instance != null) {
+			processDefinitionId = instance.getProcessDefinitionId();
+		} else {
+			// Process is finished, look it up in history
+			var historicInstance = historyService.createHistoricProcessInstanceQuery()
+					.processInstanceId(processInstanceId)
+					.singleResult();
+
+			if (historicInstance == null) {
+				LOGGER.warn("No process instance found with ID {}", processInstanceId);
+				return List.of();
+			}
+
+			processDefinitionId = historicInstance.getProcessDefinitionId();
+		}
+
+        var flowElements = repositoryService.getBpmnModel(processDefinitionId)
                 .getMainProcess()
                 .getFlowElements();
 
