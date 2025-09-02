@@ -4,22 +4,21 @@ import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
 import cv.igrp.framework.runtime.core.engine.task.model.*;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
-import org.activiti.bpmn.model.UserTask;
+import org.activiti.bpmn.model.*;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
+import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Optional.empty;
@@ -109,83 +108,105 @@ public class ActivitiTaskQueryService implements TaskQueryService {
     }
 
     @Override
-    public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
+	public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
+		LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
 
-        LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
+		// 1. Get all historic tasks (both completed and running)
+		List<HistoricTaskInstance> historicTasks = historyService
+				.createHistoricTaskInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.list();
 
-        var completedTaskKeys = historyService.createHistoricTaskInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .finished()
-                .list()
-                .stream()
-                .map(HistoricTaskInstance::getTaskDefinitionKey)
-                .collect(Collectors.toSet());
+		Set<String> completedTaskKeys = historicTasks.stream()
+				.filter(t -> t.getEndTime() != null)
+				.map(HistoricTaskInstance::getTaskDefinitionKey)
+				.collect(Collectors.toSet());
 
-        var currentTaskKeys = taskService.createTaskQuery()
-                .processInstanceId(processInstanceId)
-                .active()
-                .list()
-                .stream()
-                .map(Task::getTaskDefinitionKey)
-                .collect(Collectors.toSet());
+		Set<String> currentTaskKeys = historicTasks.stream()
+				.filter(t -> t.getEndTime() == null)
+				.map(HistoricTaskInstance::getTaskDefinitionKey)
+				.collect(Collectors.toSet());
 
-        var instance = runtimeService.createProcessInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .singleResult();
-
-		String processDefinitionId = null;
+		// 2. Resolve process definition id (works for active or historic instance)
+		String processDefinitionId;
+		ProcessInstance instance = runtimeService.createProcessInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.singleResult();
 
 		if (instance != null) {
 			processDefinitionId = instance.getProcessDefinitionId();
 		} else {
-			// Process is finished, look it up in history
-			var historicInstance = historyService.createHistoricProcessInstanceQuery()
+			HistoricProcessInstance historicInstance = historyService
+					.createHistoricProcessInstanceQuery()
 					.processInstanceId(processInstanceId)
 					.singleResult();
-
 			if (historicInstance == null) {
 				LOGGER.warn("No process instance found with ID {}", processInstanceId);
 				return List.of();
 			}
-
 			processDefinitionId = historicInstance.getProcessDefinitionId();
 		}
 
-        var flowElements = repositoryService.getBpmnModel(processDefinitionId)
-                .getMainProcess()
-                .getFlowElements();
+		// 3. Walk all tasks in a BPMN model (including subprocesses)
+		Collection<FlowElement> flowElements = repositoryService
+				.getBpmnModel(processDefinitionId)
+				.getMainProcess()
+				.getFlowElements();
 
-        var result = new ArrayList<ProcessTaskInfo>();
+		List<ProcessTaskInfo> result = new ArrayList<>();
+		collectUserTasks(flowElements, result, processInstanceId, completedTaskKeys, currentTaskKeys);
 
-        flowElements.forEach(element -> {
+		return result;
+	}
 
-            if (element instanceof UserTask userTask) {
+	/**
+	 * Recursively collect user tasks from process, including subprocesses and call activities.
+	 */
+	private void collectUserTasks(Collection<FlowElement> flowElements,
+								  List<ProcessTaskInfo> result,
+								  String processInstanceId,
+								  Set<String> completedTaskKeys,
+								  Set<String> currentTaskKeys) {
 
-                var taskKey = userTask.getId();
+		for (FlowElement element : flowElements) {
+			if (element instanceof UserTask userTask) {
+				String taskKey = userTask.getId();
+				IGRPTaskStatus status = IGRPTaskStatus.PENDING;
 
-                var status = IGRPTaskStatus.PENDING;
+				if (completedTaskKeys.contains(taskKey)) {
+					status = IGRPTaskStatus.COMPLETED;
+				} else if (currentTaskKeys.contains(taskKey)) {
+					status = IGRPTaskStatus.CURRENT;
+				}
 
-                if (completedTaskKeys.contains(taskKey))
-                    status = IGRPTaskStatus.COMPLETED;
-                else if (currentTaskKeys.contains(taskKey))
-                    status = IGRPTaskStatus.CURRENT;
+				result.add(new ProcessTaskInfo(
+						taskKey,
+						userTask.getName(),
+						status,
+						processInstanceId,
+						userTask.getFormKey()
+				));
+			}
+			else if (element instanceof SubProcess subProcess) {
+				// Embedded subprocess → recurse
+				collectUserTasks(subProcess.getFlowElements(),
+						result, processInstanceId, completedTaskKeys, currentTaskKeys);
+			}
+			else if (element instanceof CallActivity callActivity) {
+				// Call Activity → follow called process definition
+				String calledElement = callActivity.getCalledElement();
+				if (calledElement != null) {
+					BpmnModel subModel = repositoryService.getBpmnModel(calledElement);
+					if (subModel != null && subModel.getMainProcess() != null) {
+						collectUserTasks(subModel.getMainProcess().getFlowElements(),
+								result, processInstanceId, completedTaskKeys, currentTaskKeys);
+					}
+				}
+			}
+		}
+	}
 
-                var processTaskInfo = new ProcessTaskInfo(
-                        taskKey,
-                        userTask.getName(),
-                        status,
-                        processInstanceId,
-                        userTask.getFormKey()
-                );
-
-                result.add(processTaskInfo);
-            }
-        });
-
-        return result;
-    }
-
-    @Override
+	@Override
     public List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey) {
 
         LOGGER.debug("Getting tasks for BPMN progress drawing, processDefinitionKey: {}", processDefinitionKey);
