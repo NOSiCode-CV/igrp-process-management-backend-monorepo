@@ -28,5 +28,9 @@ public interface ProcessManagerAdapter {
 
     List<ProcessVariableInstance> getProcessVariables(String processInstanceId);
 
+	List<ProcessVariableInstance> getRuntimeProcessVariables(String processInstanceId);
+
+	List<ProcessVariableInstance> getHistoricProcessVariables(String processInstanceId);
+
     List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter);
 }

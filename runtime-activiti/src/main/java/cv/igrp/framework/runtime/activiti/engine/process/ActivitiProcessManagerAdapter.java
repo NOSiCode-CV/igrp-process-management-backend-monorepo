@@ -8,6 +8,7 @@ import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.history.HistoricVariableInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -392,37 +393,54 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
-    public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) {
+	public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) {
+		LOGGER.info("Getting process variables for processInstanceId={}", processInstanceId);
+		var runtimeVars = getRuntimeProcessVariables(processInstanceId);
+		if (!runtimeVars.isEmpty()) {
+			return runtimeVars;
+		}
+		var historicVars = getHistoricProcessVariables(processInstanceId);
+		if (!historicVars.isEmpty()) {
+			return historicVars;
+		}
+		LOGGER.warn("No variables found for processInstanceId={}", processInstanceId);
+		return List.of();
+	}
 
-        LOGGER.info("Getting variables for process instance with id: {}", processInstanceId);
+	@Override
+	public List<ProcessVariableInstance> getRuntimeProcessVariables(String processInstanceId) {
+		LOGGER.debug("Fetching runtime variables for processInstanceId={}", processInstanceId);
+		Map<String, Object> vars = runtimeService.getVariables(processInstanceId);
+		return vars.entrySet().stream()
+				.map(e -> new ProcessVariableInstance(
+						e.getKey(),
+						e.getValue() != null ? e.getValue().getClass().getSimpleName() : "null",
+						processInstanceId,
+						e.getValue()
+				))
+				.toList();
+	}
 
-        var payload = ProcessPayloadBuilder
-                .variables()
-                .withProcessInstanceId(processInstanceId)
-                .build();
+	@Override
+	public List<ProcessVariableInstance> getHistoricProcessVariables(String processInstanceId) {
+		LOGGER.debug("Fetching historic variables for processInstanceId={}", processInstanceId);
 
-        LOGGER.debug("GET VARIABLES PAYLOAD: {}", payload);
+		List<HistoricVariableInstance> vars = historyService
+				.createHistoricVariableInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.list();
 
-        var variables = processRuntime.variables(payload);
+		return vars.stream()
+				.map(v -> new ProcessVariableInstance(
+						v.getVariableName(),
+						v.getVariableTypeName(),
+						v.getProcessInstanceId(),
+						v.getValue()
+				))
+				.toList();
+	}
 
-        LOGGER.debug("Retrieved {} variables for process instance id: {}", variables.size(), processInstanceId);
-
-        var result = variables
-                .stream()
-                .map(obj -> new ProcessVariableInstance(
-                        obj.getName(),
-                        obj.getType(),
-                        obj.getProcessInstanceId(),
-                        obj.getValue()
-                ))
-                .toList();
-
-        LOGGER.debug("Successfully retrieved {} variables for process instance with id: {}", result.size(), processInstanceId);
-
-        return result;
-    }
-
-    @Override
+	@Override
     public List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter) {
 
         LOGGER.info("Getting deployed processes with filter: {}", filter);
