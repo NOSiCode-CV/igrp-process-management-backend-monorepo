@@ -150,7 +150,12 @@ public class ActivitiTaskActionService implements TaskActionService {
         }
     }
 
-    @Override
+	@Override
+	public void setTaskPriority(String taskInstanceId, int priority) {
+		taskService.setPriority(taskInstanceId, priority);
+	}
+
+	@Override
     public void assignTask(String taskId, String userId, String reason) {
 
         LOGGER.info("Assigning task id: {} to user: {}", taskId, userId);

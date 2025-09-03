@@ -21,4 +21,6 @@ public interface TaskActionService {
 
     boolean setTaskDueDate(String taskId, long dueDate);
 
+	void setTaskPriority(String taskInstanceId, int priority);
+
 }
