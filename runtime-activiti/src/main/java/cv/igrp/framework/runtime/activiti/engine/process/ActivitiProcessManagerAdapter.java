@@ -395,16 +395,13 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     @Override
 	public List<ProcessVariableInstance> getProcessVariables(String processInstanceId) {
 		LOGGER.info("Getting process variables for processInstanceId={}", processInstanceId);
-		var runtimeVars = getRuntimeProcessVariables(processInstanceId);
-		if (!runtimeVars.isEmpty()) {
-			return runtimeVars;
+		var runtimeInstance = runtimeService.createProcessInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.singleResult();
+		if (runtimeInstance != null) {
+			return getRuntimeProcessVariables(processInstanceId);
 		}
-		var historicVars = getHistoricProcessVariables(processInstanceId);
-		if (!historicVars.isEmpty()) {
-			return historicVars;
-		}
-		LOGGER.warn("No variables found for processInstanceId={}", processInstanceId);
-		return List.of();
+		return getHistoricProcessVariables(processInstanceId);
 	}
 
 	@Override
