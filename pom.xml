@@ -58,4 +58,15 @@
         </repository>
     </repositories>
 
+    <distributionManagement>
+        <repository>
+            <id>igrp-framework-releases</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>

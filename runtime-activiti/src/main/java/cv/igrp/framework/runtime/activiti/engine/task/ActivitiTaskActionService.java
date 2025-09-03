@@ -152,7 +152,10 @@ public class ActivitiTaskActionService implements TaskActionService {
 
 	@Override
 	public void setTaskPriority(String taskInstanceId, int priority) {
+		Objects.requireNonNull(taskInstanceId, "taskInstanceId cannot be null");
+		LOGGER.info("Setting priority for task with id: {}", taskInstanceId);
 		taskService.setPriority(taskInstanceId, priority);
+		LOGGER.info("Priority '{}' successfully set for task with id: {}", priority, taskInstanceId);
 	}
 
 	@Override
