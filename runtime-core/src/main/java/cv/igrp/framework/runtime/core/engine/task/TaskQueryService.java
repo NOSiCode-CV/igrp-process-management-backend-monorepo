@@ -22,5 +22,4 @@ public interface TaskQueryService {
 
     List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId);
 
-    List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey);
 }

@@ -1,4 +1,4 @@
-package cv.igrp.framework.runtime.activiti.engine.process;
+package cv.igrp.framework.runtime.camunda.engine.process;
 
 import cv.igrp.framework.runtime.core.engine.process.ProcessManagerAdapter;
 import cv.igrp.framework.runtime.core.engine.process.model.*;
@@ -16,7 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 import static java.util.Optional.*;
 
@@ -437,80 +436,4 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 				.toList();
 	}
 
-	@Override
-    public List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter) {
-
-        LOGGER.info("Getting deployed processes with filter: {}", filter);
-
-        Predicate<String> isValidString = obj -> obj != null && !obj.isBlank();
-
-        var query = repositoryService.createProcessDefinitionQuery();
-
-        if (isValidString.test(filter.getId())) {
-            LOGGER.debug("Filtering by process definition id: {}", filter.getId());
-            query.processDefinitionId(filter.getId());
-        }
-
-        if (isValidString.test(filter.getKey())) {
-            LOGGER.debug("Filtering by process definition key: {}", filter.getKey());
-            query.processDefinitionKey(filter.getKey());
-        }
-
-        if (isValidString.test(filter.getName())) {
-            var pattern = "%" + filter.getName().trim() + "%";
-            LOGGER.debug("Filtering by process definition name like: {}", pattern);
-            query.processDefinitionNameLike(pattern);
-        }
-
-        if (isValidString.test(filter.getDeploymentId())) {
-            LOGGER.debug("Filtering by deployment id: {}", filter.getDeploymentId());
-            query.deploymentId(filter.getDeploymentId());
-        }
-
-        if (isValidString.test(filter.getTenantId())) {
-            LOGGER.debug("Filtering by tenant id: {}", filter.getTenantId());
-            query.processDefinitionTenantId(filter.getTenantId());
-        }
-
-        if (Boolean.TRUE.equals(filter.getSuspended())) {
-            LOGGER.debug("Filtering for suspended process definitions");
-            query.suspended();
-        }
-        if (Boolean.FALSE.equals(filter.getSuspended())) {
-            LOGGER.debug("Filtering for active process definitions");
-            query.active();
-        }
-
-        if (filter.isLatestVersion()) {
-            LOGGER.debug("Filtering for latest process definitions");
-            query.latestVersion();
-        }
-
-        if (isValidString.test(filter.getApplicationBase())) {
-            LOGGER.debug("Filtering by ApplicationBase: {}", filter.getApplicationBase());
-            query.processDefinitionTenantId(filter.getApplicationBase());
-        }
-
-        var startIndex = ofNullable(filter.getPageNumber()).orElse(0);
-        var maxResults = ofNullable(filter.getPageSize()).orElse(50);
-        LOGGER.debug("Final Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
-
-        var definitions = query.listPage(startIndex, maxResults);
-
-        LOGGER.info("Found {} deployed process definitions matching the filter criteria", definitions.size());
-
-        return definitions
-                .stream()
-                .map(def -> new ProcessDefinition(
-                        def.getId(),
-                        def.getName(),
-                        def.getResourceName(),
-                        def.getKey(),
-                        def.getVersion(),
-                        def.getDeploymentId(),
-                        def.getDescription(),
-                        def.getTenantId(), // TODO 05/08/2025 16:37 validate tenant id containing application base
-                        def.isSuspended()))
-                .toList();
-    }
 }

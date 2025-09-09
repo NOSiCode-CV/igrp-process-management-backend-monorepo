@@ -32,5 +32,4 @@ public interface ProcessManagerAdapter {
 
 	List<ProcessVariableInstance> getHistoricProcessVariables(String processInstanceId);
 
-    List<ProcessDefinition> getDeployedProcesses(ProcessFilter filter);
 }

@@ -1,4 +1,4 @@
-package cv.igrp.framework.runtime.activiti.engine;
+package cv.igrp.framework.runtime.camunda.engine;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cv.igrp.framework</groupId>
+        <artifactId>igrp-process-management-backend</artifactId>
+        <version>0.1.0-beta.1</version>
+    </parent>
+
+    <artifactId>runtime-camunda</artifactId>
+    <name>IGRP Process Manager - Runtime Camunda</name>
+    <description>Camunda implementation for the process runtime engine</description>
+
+    <properties>
+        <camunda.sdk.version>8.7.12</camunda.sdk.version>
+        <camunda.operate.version>8.7.1</camunda.operate.version>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>runtime-core</artifactId>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.camunda/spring-boot-starter-camunda-sdk -->
+        <dependency>
+            <groupId>io.camunda</groupId>
+            <artifactId>spring-boot-starter-camunda-sdk</artifactId>
+            <version>${camunda.sdk.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.camunda.spring/spring-boot-starter-camunda-operate -->
+        <dependency>
+            <groupId>io.camunda.spring</groupId>
+            <artifactId>spring-boot-starter-camunda-operate</artifactId>
+            <version>${camunda.operate.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

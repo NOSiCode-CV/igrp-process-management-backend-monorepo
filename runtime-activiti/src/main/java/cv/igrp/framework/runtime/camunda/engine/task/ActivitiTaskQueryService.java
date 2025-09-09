@@ -1,4 +1,4 @@
-package cv.igrp.framework.runtime.activiti.engine.task;
+package cv.igrp.framework.runtime.camunda.engine.task;
 
 import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
 import cv.igrp.framework.runtime.core.engine.task.model.*;
@@ -13,7 +13,6 @@ import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.runtime.ProcessInstance;
-import org.activiti.engine.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -205,30 +204,6 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 			}
 		}
 	}
-
-	@Override
-    public List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey) {
-
-        LOGGER.debug("Getting tasks for BPMN progress drawing, processDefinitionKey: {}", processDefinitionKey);
-
-        return repositoryService.getBpmnModel(processDefinitionKey)
-                .getMainProcess()
-                .getFlowElements()
-                .stream()
-                .filter(element -> element instanceof UserTask)
-                .map(ut -> {
-
-                    var userTask = (UserTask) ut;
-
-                    return new ProcessArtifact(
-                            userTask.getId(),
-                            userTask.getName(),
-                            userTask.getFormKey()
-                    );
-
-                })
-                .toList();
-    }
 
 	@Override
 	public List<TaskVariableInstance> getTaskVariables(String taskId) {
