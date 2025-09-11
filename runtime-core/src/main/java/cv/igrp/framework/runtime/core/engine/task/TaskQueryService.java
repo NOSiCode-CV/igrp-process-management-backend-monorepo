@@ -1,6 +1,5 @@
 package cv.igrp.framework.runtime.core.engine.task;
 
-import cv.igrp.framework.runtime.core.engine.task.model.ProcessArtifact;
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessTaskInfo;
 import cv.igrp.framework.runtime.core.engine.task.model.TaskInfo;
 import cv.igrp.framework.runtime.core.engine.task.model.TaskVariableInstance;
