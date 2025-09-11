@@ -1,4 +1,4 @@
-package cv.igrp.framework.runtime.camunda.engine.process;
+package cv.igrp.framework.runtime.activiti.engine.process;
 
 import cv.igrp.framework.runtime.core.engine.process.ProcessManagerAdapter;
 import cv.igrp.framework.runtime.core.engine.process.model.*;
