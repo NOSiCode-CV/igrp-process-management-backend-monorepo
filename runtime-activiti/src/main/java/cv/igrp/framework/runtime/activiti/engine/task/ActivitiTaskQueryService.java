@@ -13,6 +13,7 @@ import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.IdentityLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -26,87 +27,102 @@ import static java.util.Optional.of;
 @Service
 public class ActivitiTaskQueryService implements TaskQueryService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiTaskQueryService.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiTaskQueryService.class);
 
-    private final TaskRuntime taskRuntime;
-    private final TaskService taskService;
-    private final HistoryService historyService;
-    private final RuntimeService runtimeService;
-    private final RepositoryService repositoryService;
+	private final TaskRuntime taskRuntime;
+	private final TaskService taskService;
+	private final HistoryService historyService;
+	private final RuntimeService runtimeService;
+	private final RepositoryService repositoryService;
 
 	public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
-        this.taskRuntime = taskRuntime;
-        this.taskService = taskService;
-        this.historyService = historyService;
-        this.runtimeService = runtimeService;
-        this.repositoryService = repositoryService;
-    }
+		this.taskRuntime = taskRuntime;
+		this.taskService = taskService;
+		this.historyService = historyService;
+		this.runtimeService = runtimeService;
+		this.repositoryService = repositoryService;
+	}
 
-    @Override
-    public Optional<TaskInfo> getTask(String taskId) {
+	@Override
+	public Optional<TaskInfo> getTask(String taskId) {
 
-        Objects.requireNonNull(taskId, "taskId cannot be null");
+		Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.info("Retrieving task with id: {}", taskId);
+		LOGGER.info("Retrieving task with id: {}", taskId);
 
-        try {
+		try {
 
-            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-            if (task == null)
-                return empty();
+			var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+			if (task == null)
+				return empty();
 
-            LOGGER.debug("Task found: {}", task);
+			LOGGER.debug("Task found: {}", task);
 
-            var taskInfo = new TaskInfo(
-                    task.getId(),
-                    task.getName(),
-                    task.getDescription(),
-                    task.getProcessInstanceId(),
-                    task.getTaskDefinitionKey(),
-                    task.getAssignee(),
-                    task.getOwner(),
-                    task.getCreateTime(),
-                    task.getDueDate(),
-                    task.getPriority(),
-                    task.getFormKey()
-            );
+			List<String> candidateGroups = getCandidateGroups(taskId);
 
-            return of(taskInfo);
+			var taskInfo = new TaskInfo(
+					task.getId(),
+					task.getName(),
+					task.getDescription(),
+					task.getProcessInstanceId(),
+					task.getTaskDefinitionKey(),
+					task.getAssignee(),
+					task.getOwner(),
+					task.getCreateTime(),
+					task.getDueDate(),
+					task.getPriority(),
+					task.getFormKey(),
+					candidateGroups
+			);
 
-        } catch (Exception e) {
-            LOGGER.error("Error getting task with id: {}", taskId, e);
-            return empty();
-        }
-    }
+			return of(taskInfo);
 
-    @Override
-    public List<TaskInfo> getActiveTaskInstances(String processInstanceId) {
+		} catch (Exception e) {
+			LOGGER.error("Error getting task with id: {}", taskId, e);
+			return empty();
+		}
+	}
 
-        Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
+	private List<String> getCandidateGroups(String taskId) {
+		List<String> candidateGroups = taskService.getIdentityLinksForTask(taskId).stream()
+				.filter(link -> "candidate".equals(link.getType()) && link.getGroupId() != null)
+				.map(IdentityLink::getGroupId)
+				.toList();
+		LOGGER.debug("Candidate groups: {}", candidateGroups);
+		return candidateGroups;
+	}
 
-        return taskService.createTaskQuery()
-                .processInstanceId(processInstanceId)
-                .active()
-                .orderByTaskCreateTime().asc()
-                .list()
-                .stream()
-                .map(task -> new TaskInfo(
-                        task.getId(),
-                        task.getName(),
-                        task.getDescription(),
-                        task.getProcessInstanceId(),
-                        task.getTaskDefinitionKey(),
-                        task.getAssignee(),
-                        task.getOwner(),
-                        task.getCreateTime(),
-                        task.getDueDate(),
-                        task.getPriority(),
-                        task.getFormKey()
-                ))
-                .toList();
-    }
+	@Override
+	public List<TaskInfo> getActiveTaskInstances(String processInstanceId) {
 
-    @Override
+		Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
+
+		return taskService.createTaskQuery()
+				.processInstanceId(processInstanceId)
+				.active()
+				.orderByTaskCreateTime().asc()
+				.list()
+				.stream()
+				.map(task -> {
+					List<String> candidateGroups = getCandidateGroups(task.getId());
+					return new TaskInfo(
+							task.getId(),
+							task.getName(),
+							task.getDescription(),
+							task.getProcessInstanceId(),
+							task.getTaskDefinitionKey(),
+							task.getAssignee(),
+							task.getOwner(),
+							task.getCreateTime(),
+							task.getDueDate(),
+							task.getPriority(),
+							task.getFormKey(),
+							candidateGroups);
+				})
+				.toList();
+	}
+
+	@Override
 	public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
 		LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
 
@@ -185,13 +201,11 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 						processInstanceId,
 						userTask.getFormKey()
 				));
-			}
-			else if (element instanceof SubProcess subProcess) {
+			} else if (element instanceof SubProcess subProcess) {
 				// Embedded subprocess → recurse
 				collectUserTasks(subProcess.getFlowElements(),
 						result, processInstanceId, completedTaskKeys, currentTaskKeys);
-			}
-			else if (element instanceof CallActivity callActivity) {
+			} else if (element instanceof CallActivity callActivity) {
 				// Call Activity → follow called process definition
 				String calledElement = callActivity.getCalledElement();
 				if (calledElement != null) {
