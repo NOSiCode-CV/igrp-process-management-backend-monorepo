@@ -31,4 +31,8 @@ public interface ProcessManagerAdapter {
 
 	List<ProcessVariableInstance> getHistoricProcessVariables(String processInstanceId);
 
+	void correlateMessage(String businessKey, String messageName, Map<String, Object> variables);
+
+	void signal(String processInstanceId, Map<String, Object> processVariables);
+
 }

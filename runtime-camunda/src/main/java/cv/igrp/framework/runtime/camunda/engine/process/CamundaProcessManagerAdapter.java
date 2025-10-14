@@ -1,4 +1,4 @@
-package cv.igrp.framework.runtime.activiti.engine.process;
+package cv.igrp.framework.runtime.camunda.engine.process;
 
 import cv.igrp.framework.runtime.core.engine.process.ProcessManagerAdapter;
 import cv.igrp.framework.runtime.core.engine.process.model.ProcessFilter;
@@ -66,6 +66,16 @@ public class CamundaProcessManagerAdapter implements ProcessManagerAdapter {
 	@Override
 	public List<ProcessVariableInstance> getHistoricProcessVariables(String processInstanceId) {
 		return List.of();
+	}
+
+	@Override
+	public void correlateMessage(String businessKey, String messageName, Map<String, Object> variables) {
+
+	}
+
+	@Override
+	public void signal(String processInstanceId, Map<String, Object> processVariables) {
+
 	}
 
 }

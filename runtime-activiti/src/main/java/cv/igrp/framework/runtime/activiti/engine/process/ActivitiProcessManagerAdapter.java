@@ -9,6 +9,8 @@ import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
+import org.activiti.engine.impl.RuntimeServiceImpl;
+import org.activiti.engine.runtime.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -435,5 +437,44 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 				))
 				.toList();
 	}
+
+	@Override
+	public void correlateMessage(String businessKey, String messageName, Map<String, Object> variables) {
+		LOGGER.info("Correlating message with name: {} for businessKey: {}", messageName, businessKey);
+		Execution execution = runtimeService.createExecutionQuery()
+				.processInstanceBusinessKey(businessKey)
+				.messageEventSubscriptionName(messageName)
+				.singleResult();
+		if (execution != null) {
+			runtimeService.messageEventReceived(messageName, execution.getId(), variables);
+		} else {
+			LOGGER.warn("No execution waiting for message {} and businessKey {}", messageName, businessKey);
+		}
+		LOGGER.info("Message with name: {} correlated for businessKey: {}", messageName, businessKey);
+	}
+
+	public void signal(String processInstanceId, Map<String, Object> processVariables) {
+		LOGGER.info("Signaling process instance with id: {} with variables: {}", processInstanceId, processVariables);
+		List<Execution> executions = this.runtimeService.createExecutionQuery()
+				.processInstanceId(processInstanceId)
+				.list();
+		if (executions.isEmpty()) {
+			LOGGER.warn("No executions found for process instance {}", processInstanceId);
+			return;
+		}
+		boolean signaled = false;
+		for (Execution execution : executions) {
+			if (execution.getActivityId() != null) {
+				((RuntimeServiceImpl) this.runtimeService).signal(execution.getId());
+				LOGGER.info("Execution with id: {} at activity {} signaled successfully",
+						execution.getId(), execution.getActivityId());
+				signaled = true;
+			}
+		}
+		if (!signaled) {
+			LOGGER.warn("No signalable executions found for process instance {}", processInstanceId);
+		}
+	}
+
 
 }
