@@ -237,4 +237,32 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 				.toList();
 	}
 
+	@Override
+	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey) {
+		LOGGER.info("Resolving latest process definition ID for key: {}", processDefinitionKey);
+
+		if (processDefinitionKey == null || processDefinitionKey.isBlank()) {
+			LOGGER.warn("Provided processDefinitionKey is null or blank");
+			throw new IllegalArgumentException("processDefinitionKey cannot be null or blank");
+		}
+
+		var processDefinition = repositoryService.createProcessDefinitionQuery()
+				.processDefinitionKey(processDefinitionKey)
+				.latestVersion()
+				.singleResult();
+
+		if (processDefinition == null) {
+			LOGGER.error("No process definition found for key: {}", processDefinitionKey);
+			throw new RuntimeException("No process definition found for key: " + processDefinitionKey);
+		}
+
+		LOGGER.info("Found latest process definition. ID: {}, Name: {}, Version: {}",
+				processDefinition.getId(),
+				processDefinition.getName(),
+				processDefinition.getVersion());
+
+		return processDefinition.getId();
+	}
+
+
 }

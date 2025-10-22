@@ -39,4 +39,9 @@ public class CamundaProcessDefinitionAdapter implements ProcessDefinitionAdapter
 		return List.of();
 	}
 
+	@Override
+	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey) {
+		return null;
+	}
+
 }

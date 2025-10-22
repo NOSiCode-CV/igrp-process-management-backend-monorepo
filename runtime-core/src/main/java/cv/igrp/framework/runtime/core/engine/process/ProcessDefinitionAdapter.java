@@ -69,4 +69,7 @@ public interface ProcessDefinitionAdapter {
 	 */
 	List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey);
 
+
+	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey);
+
 }
