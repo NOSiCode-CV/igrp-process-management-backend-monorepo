@@ -129,4 +129,12 @@ public class CamundaProcessDefinitionAdapter implements ProcessDefinitionAdapter
 		}
 	}
 
+	@Override
+	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey) {
+		return null;
+	}
+
+
+
+
 }
