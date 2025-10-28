@@ -26,6 +26,8 @@ public interface ProcessManagerAdapter {
 
     Optional<ProcessInstance> getProcessInstance(String processInstanceId);
 
+    Optional<ProcessInstance> getProcessInstanceByBusinessKey(String businessKey);
+
     List<ProcessInstance> listProcessInstances(ProcessFilter filter);
 
     void setProcessVariables(String processInstanceId, Map<String, Object> variables);

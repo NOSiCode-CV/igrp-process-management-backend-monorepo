@@ -10,6 +10,7 @@ import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.impl.RuntimeServiceImpl;
+import org.activiti.engine.impl.identity.Authentication;
 import org.activiti.engine.runtime.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         LOGGER.debug("Process create payload built successfully: {}", payload);
 
+        LOGGER.info("Authenticated User create: {}", Authentication.getAuthenticatedUserId());
+
         var activitiProcessInstance = processRuntime.create(payload);
 
         var igrpProcessInstance = new ProcessInstance(
@@ -75,6 +78,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
                 IGRPProcessStatus.valueOf(activitiProcessInstance.getStatus().name())
         );
 
+        LOGGER.debug("Process created by user: {}", activitiProcessInstance.getInitiator());
         LOGGER.debug("Process instance created. Details: {}", activitiProcessInstance);
 
         return igrpProcessInstance;
@@ -107,6 +111,8 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         LOGGER.debug("Process start created payload built successfully: {}", payload);
 
         var activitiProcessInstance = processRuntime.startCreatedProcess(processInstanceId, payload);
+
+        LOGGER.info("Authenticated User start: {}", Authentication.getAuthenticatedUserId());
 
         var igrpProcessInstance = new ProcessInstance(
                 activitiProcessInstance.getId(),
@@ -295,6 +301,77 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 		}
 	}
 
+    @Override
+    public Optional<ProcessInstance> getProcessInstanceByBusinessKey(String businessKey) {
+        LOGGER.info("Retrieving process instance with business key: {}", businessKey);
+
+        try {
+
+            var runtimeInstance = runtimeService.createProcessInstanceQuery()
+                    .processInstanceBusinessKey(businessKey)
+                    .singleResult();
+
+            if (runtimeInstance != null) {
+                IGRPProcessStatus status = IGRPProcessStatus.RUNNING;
+                if (runtimeInstance.isSuspended()) {
+                    status = IGRPProcessStatus.SUSPENDED;
+                }
+
+                var processInstance = new ProcessInstance(
+                        runtimeInstance.getId(),
+                        runtimeInstance.getName(),
+                        runtimeInstance.getStartTime(),
+                        null, // still running, so no endDate
+                        runtimeInstance.getStartUserId(),
+                        runtimeInstance.getProcessDefinitionId(),
+                        runtimeInstance.getProcessDefinitionKey(),
+                        runtimeInstance.getBusinessKey(),
+                        runtimeInstance.getParentId(),
+                        runtimeInstance.getProcessDefinitionVersion(),
+                        runtimeInstance.getProcessDefinitionName(),
+                        status
+                );
+
+                LOGGER.debug("Active process instance retrieved: {}", processInstance);
+                return Optional.of(processInstance);
+            }
+
+            var historicInstance = historyService.createHistoricProcessInstanceQuery()
+                    .processInstanceBusinessKey(businessKey)
+                    .singleResult();
+
+            if (historicInstance != null) {
+                IGRPProcessStatus status = historicInstance.getEndTime() != null
+                        ? IGRPProcessStatus.COMPLETED
+                        : IGRPProcessStatus.SUSPENDED;
+
+                var processInstance = new ProcessInstance(
+                        historicInstance.getId(),
+                        historicInstance.getName(),
+                        historicInstance.getStartTime(),
+                        historicInstance.getEndTime(),
+                        historicInstance.getStartUserId(),
+                        historicInstance.getProcessDefinitionId(),
+                        historicInstance.getProcessDefinitionKey(),
+                        historicInstance.getBusinessKey(),
+                        historicInstance.getSuperProcessInstanceId(),
+                        historicInstance.getProcessDefinitionVersion(),
+                        historicInstance.getProcessDefinitionName(),
+                        status
+                );
+
+                LOGGER.debug("Historic process instance retrieved: {}", processInstance);
+                return Optional.of(processInstance);
+            }
+
+            LOGGER.info("Process instance with business key: {} not found", businessKey);
+            return Optional.empty();
+
+        } catch (Exception e) {
+            LOGGER.error("Error getting process instance with business key: {}", businessKey, e);
+            return Optional.empty();
+        }
+    }
 
 	@Override
     public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {

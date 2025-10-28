@@ -53,6 +53,11 @@ public class CamundaProcessManagerAdapter implements ProcessManagerAdapter {
 	}
 
 	@Override
+	public Optional<ProcessInstance> getProcessInstanceByBusinessKey(String businessKey) {
+		return Optional.empty();
+	}
+
+	@Override
 	public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
 		return List.of();
 	}
