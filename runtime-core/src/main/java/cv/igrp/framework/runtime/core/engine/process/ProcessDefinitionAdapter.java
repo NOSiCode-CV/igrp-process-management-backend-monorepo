@@ -6,6 +6,7 @@ import cv.igrp.framework.runtime.core.engine.process.model.ProcessFilter;
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessArtifact;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Adapter interface for abstracting access to process definitions
@@ -71,5 +72,7 @@ public interface ProcessDefinitionAdapter {
 
 
 	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey);
+
+	ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId);
 
 }

@@ -9,7 +9,6 @@ import cv.igrp.framework.runtime.core.engine.process.model.ProcessFilter;
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessArtifact;
 import org.activiti.bpmn.model.UserTask;
 import org.activiti.engine.RepositoryService;
-import org.activiti.engine.repository.ProcessDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -107,19 +106,6 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
             LOGGER.error("Failed to undeploy the process definition with deployment id: {}", deploymentId, ex);
             throw new ProcessDefinitionException("An error occurred when undeploy the process definition", ex);
         }
-    }
-
-    private ProcessDefinition getProcessDefinition(final String deploymentId) {
-
-        LOGGER.debug("Querying process definition for deployment id: {}", deploymentId);
-
-        var result = repositoryService.createProcessDefinitionQuery()
-                .deploymentId(deploymentId)
-                .singleResult();
-
-        LOGGER.debug("Found process definition: {}", result);
-
-        return result;
     }
 
     private String getBpmnXml(final String deploymentId, final String resourceName) throws Exception {
@@ -263,6 +249,39 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
 		return processDefinition.getId();
 	}
+
+	@Override
+	public ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId) {
+		LOGGER.info("Getting process definition for Id: {}", processDefinitionId);
+
+		if (processDefinitionId == null || processDefinitionId.isBlank()) {
+			LOGGER.warn("Provided processDefinitionId is null or blank");
+			throw new IllegalArgumentException("processDefinitionId cannot be null or blank");
+		}
+
+		var processDefinition = repositoryService.createProcessDefinitionQuery()
+				.processDefinitionId(processDefinitionId)
+				.singleResult();
+
+		if (processDefinition == null) {
+			LOGGER.error("No process definition found for ID: {}", processDefinitionId);
+			throw new RuntimeException("No process definition found for id: " + processDefinitionId);
+		}
+
+		LOGGER.info("Found process definition. ID: {}, Name: {}, Version: {}",
+				processDefinition.getId(),
+				processDefinition.getName(),
+				processDefinition.getVersion());
+
+        return IgrpProcessDefinitionRepresentation.builder()
+                .key(processDefinition.getKey())
+                .name(processDefinition.getName())
+                .description(processDefinition.getDescription())
+                .version(String.valueOf(processDefinition.getVersion()))
+                .build();
+	}
+
+
 
 
 }

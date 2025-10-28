@@ -134,7 +134,8 @@ public class CamundaProcessDefinitionAdapter implements ProcessDefinitionAdapter
 		return null;
 	}
 
-
-
-
+	@Override
+	public ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId) {
+		return null;
+	}
 }
