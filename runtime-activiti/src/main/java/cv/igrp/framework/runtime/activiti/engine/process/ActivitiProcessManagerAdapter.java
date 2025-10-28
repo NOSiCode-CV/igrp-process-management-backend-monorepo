@@ -39,6 +39,97 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
     @Override
+    public ProcessInstance createProcess(String processDefinitionId, String businessKey) {
+        Objects.requireNonNull(processDefinitionId, "processDefinitionId cannot be null");
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated())
+            throw new AccessDeniedException("No authenticated user found");
+
+        LOGGER.debug("Process created by {}", authentication.getName());
+
+        LOGGER.info("Creating process with definition id: {}, business key: {}", processDefinitionId, businessKey);
+
+        var payload = ProcessPayloadBuilder
+                .create()
+                .withProcessDefinitionId(processDefinitionId)
+                .withBusinessKey(businessKey)
+                .build();
+
+        LOGGER.debug("Process create payload built successfully: {}", payload);
+
+        var activitiProcessInstance = processRuntime.create(payload);
+
+        var igrpProcessInstance = new ProcessInstance(
+                activitiProcessInstance.getId(),
+                activitiProcessInstance.getName(),
+                activitiProcessInstance.getStartDate(),
+                activitiProcessInstance.getCompletedDate(),
+                activitiProcessInstance.getInitiator(),
+                activitiProcessInstance.getProcessDefinitionId(),
+                activitiProcessInstance.getProcessDefinitionKey(),
+                activitiProcessInstance.getBusinessKey(),
+                activitiProcessInstance.getParentId(),
+                activitiProcessInstance.getProcessDefinitionVersion(),
+                activitiProcessInstance.getProcessDefinitionName(),
+                IGRPProcessStatus.valueOf(activitiProcessInstance.getStatus().name())
+        );
+
+        LOGGER.debug("Process instance created. Details: {}", activitiProcessInstance);
+
+        return igrpProcessInstance;
+    }
+
+    @Override
+    public ProcessInstance startCreatedProcess(String processInstanceId, String processDefinitionId, String businessKey, Map<String, Object> variables) {
+
+        Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
+        Objects.requireNonNull(processDefinitionId, "processDefinitionId cannot be null");
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated())
+            throw new AccessDeniedException("No authenticated user found");
+
+        LOGGER.debug("Process started by {}", authentication.getName());
+
+        LOGGER.info("Starting created process with definition id: {}, business key: {}", processDefinitionId, businessKey);
+
+        LOGGER.debug("Process variables prepared, count: {}", variables.size());
+
+        var payload = ProcessPayloadBuilder
+                .start()
+                .withProcessDefinitionId(processDefinitionId)
+                .withBusinessKey(businessKey)
+                .withVariables(variables)
+                .withVariable("startedBy", authentication.getName())
+                .build();
+
+        LOGGER.debug("Process start created payload built successfully: {}", payload);
+
+        var activitiProcessInstance = processRuntime.startCreatedProcess(processInstanceId, payload);
+
+        var igrpProcessInstance = new ProcessInstance(
+                activitiProcessInstance.getId(),
+                activitiProcessInstance.getName(),
+                activitiProcessInstance.getStartDate(),
+                activitiProcessInstance.getCompletedDate(),
+                activitiProcessInstance.getInitiator(),
+                activitiProcessInstance.getProcessDefinitionId(),
+                activitiProcessInstance.getProcessDefinitionKey(),
+                activitiProcessInstance.getBusinessKey(),
+                activitiProcessInstance.getParentId(),
+                activitiProcessInstance.getProcessDefinitionVersion(),
+                activitiProcessInstance.getProcessDefinitionName(),
+                IGRPProcessStatus.valueOf(activitiProcessInstance.getStatus().name())
+        );
+
+        LOGGER.debug("Process instance started. Details: {}", activitiProcessInstance);
+
+        return igrpProcessInstance;
+    }
+
+    @Override
+    @Deprecated
     public ProcessInstance startProcess(String processDefinitionId, String businessKey, Map<String, Object> variables) {
 
         Objects.requireNonNull(processDefinitionId, "processDefinitionId cannot be null");

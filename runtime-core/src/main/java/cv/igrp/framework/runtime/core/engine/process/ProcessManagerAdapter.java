@@ -11,7 +11,12 @@ import java.util.Optional;
 
 public interface ProcessManagerAdapter {
 
+    @Deprecated
     ProcessInstance startProcess(String processDefinitionId, String businessKey, Map<String, Object> variables);
+
+    ProcessInstance createProcess(String processDefinitionId, String businessKey);
+
+    ProcessInstance startCreatedProcess(String processInstanceId, String processDefinitionId, String businessKey, Map<String, Object> variables);
 
     void suspendProcess(String processInstanceId);
 

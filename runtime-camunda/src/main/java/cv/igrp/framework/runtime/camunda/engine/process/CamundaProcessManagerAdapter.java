@@ -17,6 +17,15 @@ public class CamundaProcessManagerAdapter implements ProcessManagerAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CamundaProcessManagerAdapter.class);
 
+	@Override
+	public ProcessInstance createProcess(String processDefinitionId, String businessKey) {
+		return null;
+	}
+
+	@Override
+	public ProcessInstance startCreatedProcess(String processInstanceId, String processDefinitionId, String businessKey, Map<String, Object> variables) {
+		return null;
+	}
 
 	@Override
 	public ProcessInstance startProcess(String processDefinitionId, String businessKey, Map<String, Object> variables) {
