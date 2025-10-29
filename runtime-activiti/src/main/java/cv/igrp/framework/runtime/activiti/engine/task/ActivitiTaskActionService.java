@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,26 +29,23 @@ public class ActivitiTaskActionService implements TaskActionService {
     }
 
     @Override
-    public void completeTask(String taskId, Map<String, Object> variables, String userId) {
+    public void completeTask(String taskId, Map<String, Object> variables) {
 
         Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.debug("Completing task with id: {}, user: {}", taskId, userId);
+        LOGGER.debug("Completing task with id: {}", taskId);
 
-        if (variables != null && !variables.isEmpty())
-            LOGGER.debug("Variables: {}", variables);
-
-        var variablesPayload = variables != null ? new HashMap<>(variables) : new HashMap<String, Object>();
-        variablesPayload.put("igrpUserId", userId);
+        if (variables != null)
+			LOGGER.debug("Variables: {}", variables);
 
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)
-                .withVariables(variablesPayload)
+                .withVariables(variables)
                 .build();
 
         taskRuntime.complete(payload);
 
-        LOGGER.info("Task with id: {} successfully completed by user: {}", taskId, userId);
+        LOGGER.info("Task with id: {} successfully completed", taskId);
     }
 
     @Override
@@ -153,7 +149,15 @@ public class ActivitiTaskActionService implements TaskActionService {
         }
     }
 
-    @Override
+	@Override
+	public void setTaskPriority(String taskInstanceId, int priority) {
+		Objects.requireNonNull(taskInstanceId, "taskInstanceId cannot be null");
+		LOGGER.info("Setting priority for task with id: {}", taskInstanceId);
+		taskService.setPriority(taskInstanceId, priority);
+		LOGGER.info("Priority '{}' successfully set for task with id: {}", priority, taskInstanceId);
+	}
+
+	@Override
     public void assignTask(String taskId, String userId, String reason) {
 
         LOGGER.info("Assigning task id: {} to user: {}", taskId, userId);

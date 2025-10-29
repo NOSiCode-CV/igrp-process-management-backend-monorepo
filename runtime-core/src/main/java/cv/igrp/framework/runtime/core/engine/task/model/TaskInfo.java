@@ -1,6 +1,7 @@
 package cv.igrp.framework.runtime.core.engine.task.model;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Classe para representar informações de uma tarefa.
@@ -16,6 +17,7 @@ public record TaskInfo(
         Date createdTime,
         Date dueDate,
         int priority,
-        String formKey
+        String formKey,
+		List<String> candidateGroups
 ) {
 }

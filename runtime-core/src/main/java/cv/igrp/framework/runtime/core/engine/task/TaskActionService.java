@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface TaskActionService {
 
-    void completeTask(String taskId, Map<String, Object> variables, String userId);
+    void completeTask(String taskId, Map<String, Object> variables);
 
     void assignTask(String taskId, String userId, String reason);
 
@@ -20,5 +20,7 @@ public interface TaskActionService {
     void setTaskVariables(String taskId, Map<String, Object> variables);
 
     boolean setTaskDueDate(String taskId, long dueDate);
+
+	void setTaskPriority(String taskInstanceId, int priority);
 
 }

@@ -4,21 +4,21 @@ import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
 import cv.igrp.framework.runtime.core.engine.task.model.*;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
-import org.activiti.bpmn.model.UserTask;
+import org.activiti.bpmn.model.*;
 import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.history.HistoricTaskInstance;
-import org.activiti.engine.task.Task;
+import org.activiti.engine.history.HistoricVariableInstance;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.IdentityLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Optional.empty;
@@ -27,199 +27,260 @@ import static java.util.Optional.of;
 @Service
 public class ActivitiTaskQueryService implements TaskQueryService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiTaskQueryService.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ActivitiTaskQueryService.class);
 
-    private final TaskRuntime taskRuntime;
-    private final TaskService taskService;
-    private final HistoryService historyService;
-    private final RuntimeService runtimeService;
-    private final RepositoryService repositoryService;
+	private final TaskRuntime taskRuntime;
+	private final TaskService taskService;
+	private final HistoryService historyService;
+	private final RuntimeService runtimeService;
+	private final RepositoryService repositoryService;
 
-    public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
-        this.taskRuntime = taskRuntime;
-        this.taskService = taskService;
-        this.historyService = historyService;
-        this.runtimeService = runtimeService;
-        this.repositoryService = repositoryService;
-    }
+	public ActivitiTaskQueryService(TaskRuntime taskRuntime, TaskService taskService, HistoryService historyService, RuntimeService runtimeService, RepositoryService repositoryService) {
+		this.taskRuntime = taskRuntime;
+		this.taskService = taskService;
+		this.historyService = historyService;
+		this.runtimeService = runtimeService;
+		this.repositoryService = repositoryService;
+	}
 
-    @Override
-    public Optional<TaskInfo> getTask(String taskId) {
+	@Override
+	public Optional<TaskInfo> getTask(String taskId) {
 
-        Objects.requireNonNull(taskId, "taskId cannot be null");
+		Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.info("Retrieving task with id: {}", taskId);
+		LOGGER.info("Retrieving task with id: {}", taskId);
 
-        try {
+		try {
 
-            var task = taskService.createTaskQuery().taskId(taskId).singleResult();
-            if (task == null)
-                return empty();
+			var task = taskService.createTaskQuery().taskId(taskId).singleResult();
+			if (task == null)
+				return empty();
 
-            LOGGER.debug("Task found: {}", task);
+			LOGGER.debug("Task found: {}", task);
 
-            var taskInfo = new TaskInfo(
-                    task.getId(),
-                    task.getName(),
-                    task.getDescription(),
-                    task.getProcessInstanceId(),
-                    task.getTaskDefinitionKey(),
-                    task.getAssignee(),
-                    task.getOwner(),
-                    task.getCreateTime(),
-                    task.getDueDate(),
-                    task.getPriority(),
-                    task.getFormKey()
-            );
+			List<String> candidateGroups = getCandidateGroups(taskId);
 
-            return of(taskInfo);
+			var taskInfo = new TaskInfo(
+					task.getId(),
+					task.getName(),
+					task.getDescription(),
+					task.getProcessInstanceId(),
+					task.getTaskDefinitionKey(),
+					task.getAssignee(),
+					task.getOwner(),
+					task.getCreateTime(),
+					task.getDueDate(),
+					task.getPriority(),
+					task.getFormKey(),
+					candidateGroups
+			);
 
-        } catch (Exception e) {
-            LOGGER.error("Error getting task with id: {}", taskId, e);
-            return empty();
-        }
-    }
+			return of(taskInfo);
 
-    @Override
-    public List<TaskInfo> getActiveTaskInstances(String processInstanceId) {
+		} catch (Exception e) {
+			LOGGER.error("Error getting task with id: {}", taskId, e);
+			return empty();
+		}
+	}
 
-        Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
+	private List<String> getCandidateGroups(String taskId) {
+		List<String> candidateGroups = taskService.getIdentityLinksForTask(taskId).stream()
+				.filter(link -> "candidate".equals(link.getType()) && link.getGroupId() != null)
+				.map(IdentityLink::getGroupId)
+				.toList();
+		LOGGER.debug("Candidate groups: {}", candidateGroups);
+		return candidateGroups;
+	}
 
-        return taskService.createTaskQuery()
-                .processInstanceId(processInstanceId)
-                .active()
-                .orderByTaskCreateTime().asc()
-                .list()
-                .stream()
-                .map(task -> new TaskInfo(
-                        task.getId(),
-                        task.getName(),
-                        task.getDescription(),
-                        task.getProcessInstanceId(),
-                        task.getTaskDefinitionKey(),
-                        task.getAssignee(),
-                        task.getOwner(),
-                        task.getCreateTime(),
-                        task.getDueDate(),
-                        task.getPriority(),
-                        task.getFormKey()
-                ))
-                .toList();
-    }
+	@Override
+	public List<TaskInfo> getActiveTaskInstances(String processInstanceId) {
 
-    @Override
-    public List<TaskVariableInstance> getTaskVariables(String taskId) {
+		Objects.requireNonNull(processInstanceId, "processInstanceId cannot be null");
 
-        Objects.requireNonNull(taskId, "taskId cannot be null");
+		return taskService.createTaskQuery()
+				.processInstanceId(processInstanceId)
+				.active()
+				.orderByTaskCreateTime().asc()
+				.list()
+				.stream()
+				.map(task -> {
+					List<String> candidateGroups = getCandidateGroups(task.getId());
+					return new TaskInfo(
+							task.getId(),
+							task.getName(),
+							task.getDescription(),
+							task.getProcessInstanceId(),
+							task.getTaskDefinitionKey(),
+							task.getAssignee(),
+							task.getOwner(),
+							task.getCreateTime(),
+							task.getDueDate(),
+							task.getPriority(),
+							task.getFormKey(),
+							candidateGroups);
+				})
+				.toList();
+	}
 
-        LOGGER.debug("Getting variables for task with id: {}", taskId);
+	@Override
+	public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
+		LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
 
-        var payload = TaskPayloadBuilder.variables()
-                .withTaskId(taskId)
-                .build();
+		// 1. Get all historic tasks (both completed and running)
+		List<HistoricTaskInstance> historicTasks = historyService
+				.createHistoricTaskInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.list();
 
-        var variables = taskRuntime.variables(payload);
+		Set<String> completedTaskKeys = historicTasks.stream()
+				.filter(t -> t.getEndTime() != null)
+				.map(HistoricTaskInstance::getTaskDefinitionKey)
+				.collect(Collectors.toSet());
 
-        LOGGER.debug("Retrieved {} variables for task id: {}", variables.size(), taskId);
+		Set<String> currentTaskKeys = historicTasks.stream()
+				.filter(t -> t.getEndTime() == null)
+				.map(HistoricTaskInstance::getTaskDefinitionKey)
+				.collect(Collectors.toSet());
 
-        return variables
-                .stream()
-                .map(obj -> new TaskVariableInstance(
-                        obj.getName(),
-                        obj.getType(),
-                        obj.getProcessInstanceId(),
-                        obj.getTaskId(),
-                        obj.isTaskVariable(),
-                        obj.getValue()
-                ))
-                .toList();
-    }
+		// 2. Resolve process definition id (works for active or historic instance)
+		String processDefinitionId;
+		ProcessInstance instance = runtimeService.createProcessInstanceQuery()
+				.processInstanceId(processInstanceId)
+				.singleResult();
 
-    @Override
-    public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
+		if (instance != null) {
+			processDefinitionId = instance.getProcessDefinitionId();
+		} else {
+			HistoricProcessInstance historicInstance = historyService
+					.createHistoricProcessInstanceQuery()
+					.processInstanceId(processInstanceId)
+					.singleResult();
+			if (historicInstance == null) {
+				LOGGER.warn("No process instance found with ID {}", processInstanceId);
+				return List.of();
+			}
+			processDefinitionId = historicInstance.getProcessDefinitionId();
+		}
 
-        LOGGER.debug("Getting tasks for BPMN progress drawing, processInstanceId: {}", processInstanceId);
+		// 3. Walk all tasks in a BPMN model (including subprocesses)
+		Collection<FlowElement> flowElements = repositoryService
+				.getBpmnModel(processDefinitionId)
+				.getMainProcess()
+				.getFlowElements();
 
-        var completedTaskKeys = historyService.createHistoricTaskInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .finished()
-                .list()
-                .stream()
-                .map(HistoricTaskInstance::getTaskDefinitionKey)
-                .collect(Collectors.toSet());
+		List<ProcessTaskInfo> result = new ArrayList<>();
+		collectUserTasks(flowElements, result, processInstanceId, completedTaskKeys, currentTaskKeys);
 
-        var currentTaskKeys = taskService.createTaskQuery()
-                .processInstanceId(processInstanceId)
-                .active()
-                .list()
-                .stream()
-                .map(Task::getTaskDefinitionKey)
-                .collect(Collectors.toSet());
+		return result;
+	}
 
-        var instance = runtimeService.createProcessInstanceQuery()
-                .processInstanceId(processInstanceId)
-                .singleResult();
+	/**
+	 * Recursively collect user tasks from process, including subprocesses and call activities.
+	 */
+	private void collectUserTasks(Collection<FlowElement> flowElements,
+								  List<ProcessTaskInfo> result,
+								  String processInstanceId,
+								  Set<String> completedTaskKeys,
+								  Set<String> currentTaskKeys) {
 
-        if (instance == null) {
-            LOGGER.warn("Process instance with ID {} not found", processInstanceId);
-            return List.of();
-        }
+		for (FlowElement element : flowElements) {
+			if (element instanceof UserTask userTask) {
+				String taskKey = userTask.getId();
+				IGRPTaskStatus status = IGRPTaskStatus.PENDING;
 
-        var flowElements = repositoryService.getBpmnModel(instance.getProcessDefinitionId())
-                .getMainProcess()
-                .getFlowElements();
+				if (completedTaskKeys.contains(taskKey)) {
+					status = IGRPTaskStatus.COMPLETED;
+				} else if (currentTaskKeys.contains(taskKey)) {
+					status = IGRPTaskStatus.CURRENT;
+				}
 
-        var result = new ArrayList<ProcessTaskInfo>();
+				result.add(new ProcessTaskInfo(
+						taskKey,
+						userTask.getName(),
+						status,
+						processInstanceId,
+						userTask.getFormKey()
+				));
+			} else if (element instanceof SubProcess subProcess) {
+				// Embedded subprocess → recurse
+				collectUserTasks(subProcess.getFlowElements(),
+						result, processInstanceId, completedTaskKeys, currentTaskKeys);
+			} else if (element instanceof CallActivity callActivity) {
+				// Call Activity → follow called process definition
+				String calledElement = callActivity.getCalledElement();
+				if (calledElement != null) {
+					BpmnModel subModel = repositoryService.getBpmnModel(calledElement);
+					if (subModel != null && subModel.getMainProcess() != null) {
+						collectUserTasks(subModel.getMainProcess().getFlowElements(),
+								result, processInstanceId, completedTaskKeys, currentTaskKeys);
+					}
+				}
+			}
+		}
+	}
 
-        flowElements.forEach(element -> {
+	@Override
+	public List<TaskVariableInstance> getTaskVariables(String taskId) {
+		List<TaskVariableInstance> runtimeVariables = new ArrayList<>(getRuntimeTaskVariables(taskId));
+		List<TaskVariableInstance> historicVariables = new ArrayList<>(getHistoricTaskVariables(taskId));
+		runtimeVariables.addAll(historicVariables);
+		return runtimeVariables;
+	}
 
-            if (element instanceof UserTask userTask) {
+	@Override
+	public List<TaskVariableInstance> getRuntimeTaskVariables(String taskId) {
+		Objects.requireNonNull(taskId, "taskId cannot be null");
 
-                var taskKey = userTask.getId();
+		LOGGER.debug("Getting variables for task with id: {}", taskId);
 
-                var status = IGRPTaskStatus.PENDING;
+		try {
+			var payload = TaskPayloadBuilder.variables()
+					.withTaskId(taskId)
+					.build();
 
-                if (completedTaskKeys.contains(taskKey))
-                    status = IGRPTaskStatus.COMPLETED;
-                else if (currentTaskKeys.contains(taskKey))
-                    status = IGRPTaskStatus.CURRENT;
+			var variables = taskRuntime.variables(payload);
 
-                var processTaskInfo = new ProcessTaskInfo(
-                        taskKey,
-                        userTask.getName(),
-                        status,
-                        processInstanceId,
-                        userTask.getFormKey()
-                );
+			LOGGER.debug("Retrieved {} runtime variables for task id: {}", variables.size(), taskId);
 
-                result.add(processTaskInfo);
-            }
-        });
+			return variables.stream()
+					.map(obj -> new TaskVariableInstance(
+							obj.getName(),
+							obj.getType(),
+							obj.getProcessInstanceId(),
+							obj.getTaskId(),
+							obj.isTaskVariable(),
+							obj.getValue()
+					))
+					.toList();
 
-        return result;
-    }
+		} catch (Exception e) {
+			LOGGER.debug("No runtime variables found for task id {} (probably completed). Returning empty list.", taskId);
+			return new ArrayList<>();
+		}
+	}
 
-    @Override
-    public List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey) {
+	public List<TaskVariableInstance> getHistoricTaskVariables(String taskId) {
+		Objects.requireNonNull(taskId, "taskId cannot be null");
 
-        LOGGER.debug("Getting tasks for BPMN progress drawing, processDefinitionKey: {}", processDefinitionKey);
+		LOGGER.debug("Getting historic variables for task with id: {}", taskId);
 
-        return repositoryService.getBpmnModel(processDefinitionKey)
-                .getMainProcess()
-                .getFlowElements()
-                .stream()
-                .filter(element -> element instanceof UserTask)
-                .map(ut -> {
+		List<HistoricVariableInstance> vars =
+				historyService.createHistoricVariableInstanceQuery()
+						.taskId(taskId)
+						.list();
 
-                    var userTask = (UserTask) ut;
+		LOGGER.debug("Retrieved {} historic variables for task id: {}", vars.size(), taskId);
 
-                    return new ProcessArtifact(
-                            userTask.getId(),
-                            userTask.getName(),
-                            userTask.getFormKey()
-                    );
+		return vars.stream()
+				.map(obj -> new TaskVariableInstance(
+						obj.getVariableName(),
+						obj.getVariableTypeName(),
+						obj.getProcessInstanceId(),
+						obj.getTaskId(),
+						true,
+						obj.getValue()
+				))
+				.toList();
+	}
 
-                })
-                .toList();
-    }
 }
