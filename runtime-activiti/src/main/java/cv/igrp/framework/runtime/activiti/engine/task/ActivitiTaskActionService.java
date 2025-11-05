@@ -49,6 +49,26 @@ public class ActivitiTaskActionService implements TaskActionService {
     }
 
     @Override
+    public void saveTask(String taskId, Map<String, Object> variables) {
+
+        Objects.requireNonNull(taskId, "taskId cannot be null");
+
+        LOGGER.debug("Saving task with id: {}", taskId);
+
+        if (variables != null)
+            LOGGER.debug("Variables: {}", variables);
+
+        var payload = TaskPayloadBuilder.save()
+                .withTaskId(taskId)
+                .withVariables(variables)
+                .build();
+
+        taskRuntime.save(payload);
+
+        LOGGER.info("Task with id: {} successfully saved", taskId);
+    }
+
+    @Override
     public void setTaskVariables(String taskId, Map<String, Object> variables) {
 
         Objects.requireNonNull(taskId, "taskId cannot be null");

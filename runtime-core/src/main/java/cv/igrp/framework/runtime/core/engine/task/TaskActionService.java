@@ -5,6 +5,8 @@ import java.util.Map;
 
 public interface TaskActionService {
 
+    void saveTask(String taskId, Map<String, Object> variables);
+
     void completeTask(String taskId, Map<String, Object> variables);
 
     void assignTask(String taskId, String userId, String reason);
