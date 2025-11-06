@@ -1,6 +1,7 @@
 package cv.igrp.framework.runtime.activiti.engine.task;
 
 import cv.igrp.framework.runtime.core.engine.task.TaskActionService;
+import org.activiti.api.model.shared.model.VariableInstance;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
 import org.activiti.engine.RuntimeService;
@@ -55,8 +56,16 @@ public class ActivitiTaskActionService implements TaskActionService {
 
         LOGGER.debug("Saving task with id: {}", taskId);
 
-        if (variables != null)
+        if (variables != null) {
             LOGGER.debug("Variables: {}", variables);
+        }
+
+        var taskVariablesPayload = TaskPayloadBuilder.variables().withTaskId(taskId).build();
+
+        var taskVariables = taskRuntime.variables(taskVariablesPayload);
+        var taskVariablesNames = taskVariables.stream().map(VariableInstance::getName).toList();
+
+        LOGGER.debug("Current task variables: {}", taskVariablesNames);
 
         var payload = TaskPayloadBuilder.save()
                 .withTaskId(taskId)
@@ -66,6 +75,7 @@ public class ActivitiTaskActionService implements TaskActionService {
         taskRuntime.save(payload);
 
         LOGGER.info("Task with id: {} successfully saved", taskId);
+
     }
 
     @Override
