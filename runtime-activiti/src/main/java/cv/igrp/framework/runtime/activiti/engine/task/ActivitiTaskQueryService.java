@@ -221,11 +221,27 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 
 	@Override
 	public List<TaskVariableInstance> getTaskVariables(String taskId) {
+		// Get both runtime and historic task variables
 		List<TaskVariableInstance> runtimeVariables = new ArrayList<>(getRuntimeTaskVariables(taskId));
 		List<TaskVariableInstance> historicVariables = new ArrayList<>(getHistoricTaskVariables(taskId));
-		runtimeVariables.addAll(historicVariables);
-		return runtimeVariables;
+
+		// Use a map to avoid duplicates, prioritizing runtime variables
+		Map<String, TaskVariableInstance> variablesMap = new LinkedHashMap<>();
+
+		// Add runtime variables first (they take priority)
+		for (TaskVariableInstance var : runtimeVariables) {
+			variablesMap.put(var.name(), var);
+		}
+
+		// Add historic variables only if they don’t exist in runtime
+		for (TaskVariableInstance var : historicVariables) {
+			variablesMap.putIfAbsent(var.name(), var);
+		}
+
+		// Return merged list
+		return new ArrayList<>(variablesMap.values());
 	}
+
 
 	@Override
 	public List<TaskVariableInstance> getRuntimeTaskVariables(String taskId) {

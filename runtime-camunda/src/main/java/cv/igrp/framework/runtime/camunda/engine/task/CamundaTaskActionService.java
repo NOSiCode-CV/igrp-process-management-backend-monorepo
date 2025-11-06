@@ -13,6 +13,10 @@ public class CamundaTaskActionService implements TaskActionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CamundaTaskActionService.class);
 
+	@Override
+	public void saveTask(String taskId, Map<String, Object> variables) {
+
+	}
 
 	@Override
 	public void completeTask(String taskId, Map<String, Object> variables) {
