@@ -609,10 +609,16 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 	@Override
 	public void correlateMessage(String businessKey, String messageName, Map<String, Object> variables) {
 		LOGGER.info("Correlating message with name: {} for businessKey: {}", messageName, businessKey);
+
+        var runtimeInstance = runtimeService.createProcessInstanceQuery()
+                .processInstanceBusinessKey(businessKey)
+                .singleResult();
+
 		Execution execution = runtimeService.createExecutionQuery()
-				.processInstanceBusinessKey(businessKey)
+				.processInstanceId(runtimeInstance.getProcessInstanceId())
 				.messageEventSubscriptionName(messageName)
 				.singleResult();
+
 		if (execution != null) {
 			runtimeService.messageEventReceived(messageName, execution.getId(), variables);
 		} else {
