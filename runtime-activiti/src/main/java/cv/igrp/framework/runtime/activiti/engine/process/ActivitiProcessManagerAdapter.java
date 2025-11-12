@@ -609,27 +609,52 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 	@Override
 	public void correlateMessage(String businessKey, String messageName, Map<String, Object> variables) {
 		LOGGER.info("Correlating message with name: {} for businessKey: {}", messageName, businessKey);
-		Execution execution = runtimeService.createExecutionQuery()
-				.processInstanceBusinessKey(businessKey)
-				.messageEventSubscriptionName(messageName)
-				.singleResult();
-		if (execution != null) {
-			runtimeService.messageEventReceived(messageName, execution.getId(), variables);
-		} else {
-			LOGGER.warn("No execution waiting for message {} and businessKey {}", messageName, businessKey);
-		}
-		LOGGER.info("Message with name: {} correlated for businessKey: {}", messageName, businessKey);
+
+        var runtimeInstance = runtimeService.createProcessInstanceQuery()
+                .processInstanceBusinessKey(businessKey)
+                .singleResult();
+
+        if(runtimeInstance != null) {
+            Execution execution = runtimeService.createExecutionQuery()
+                    .processInstanceId(runtimeInstance.getProcessInstanceId())
+                    .messageEventSubscriptionName(messageName)
+                    .singleResult();
+
+            if (execution != null) {
+                runtimeService.messageEventReceived(messageName, execution.getId(), variables);
+            } else {
+                LOGGER.warn("No execution waiting for message {} and businessKey {}", messageName, businessKey);
+            }
+
+            LOGGER.info("Message with name: {} correlated for businessKey: {}", messageName, businessKey);
+
+        } else {
+            LOGGER.warn("Message {} not correlated. No running process instance found for businessKey {}", messageName, businessKey);
+        }
+
 	}
 
-	public void signal(String processInstanceId, Map<String, Object> processVariables) {
-		LOGGER.info("Signaling process instance with id: {} with variables: {}", processInstanceId, processVariables);
-		List<Execution> executions = this.runtimeService.createExecutionQuery()
-				.processInstanceId(processInstanceId)
-				.list();
+	public void signal(String processInstanceId, String taskId, Map<String, Object> processVariables) {
+		LOGGER.info("Signaling process instance with id: {} with variables: {} and task ID {}", processInstanceId, processVariables, taskId);
+
+        List<Execution> executions;
+
+        if(taskId != null) {
+            executions = this.runtimeService.createExecutionQuery()
+                    .processInstanceId(processInstanceId)
+                    .activityId(taskId)
+                    .list();
+        } else {
+            executions = this.runtimeService.createExecutionQuery()
+                    .processInstanceId(processInstanceId)
+                    .list();
+        }
+
 		if (executions.isEmpty()) {
 			LOGGER.warn("No executions found for process instance {}", processInstanceId);
 			return;
 		}
+
 		boolean signaled = false;
 		for (Execution execution : executions) {
 			if (execution.getActivityId() != null) {

@@ -40,6 +40,6 @@ public interface ProcessManagerAdapter {
 
 	void correlateMessage(String businessKey, String messageName, Map<String, Object> variables);
 
-	void signal(String processInstanceId, Map<String, Object> processVariables);
+	void signal(String processInstanceId, String taskId, Map<String, Object> processVariables);
 
 }

@@ -88,7 +88,7 @@ public class CamundaProcessManagerAdapter implements ProcessManagerAdapter {
 	}
 
 	@Override
-	public void signal(String processInstanceId, Map<String, Object> processVariables) {
+	public void signal(String processInstanceId, String taskId, Map<String, Object> processVariables) {
 
 	}
 
