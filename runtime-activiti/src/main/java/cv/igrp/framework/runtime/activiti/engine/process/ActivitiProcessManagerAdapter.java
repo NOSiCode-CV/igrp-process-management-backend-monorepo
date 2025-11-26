@@ -51,7 +51,10 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
         LOGGER.info("Creating process with definition id: {}, business key: {}", processDefinitionId, businessKey);
 
-        var payload = ProcessPayloadBuilder
+		org.activiti.engine.impl.identity.Authentication
+				.setAuthenticatedUserId(authentication.getName());
+
+		var payload = ProcessPayloadBuilder
                 .create()
                 .withProcessDefinitionId(processDefinitionId)
                 .withBusinessKey(businessKey)
@@ -99,6 +102,9 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
         LOGGER.info("Starting created process with definition id: {}, business key: {}", processDefinitionId, businessKey);
 
         LOGGER.debug("Process variables prepared, count: {}", variables.size());
+
+		org.activiti.engine.impl.identity.Authentication
+				.setAuthenticatedUserId(authentication.getName());
 
         var payload = ProcessPayloadBuilder
                 .start()
