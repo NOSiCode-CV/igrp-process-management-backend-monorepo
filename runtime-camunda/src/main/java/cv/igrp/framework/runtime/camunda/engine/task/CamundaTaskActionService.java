@@ -63,4 +63,14 @@ public class CamundaTaskActionService implements TaskActionService {
 
 	}
 
+	@Override
+	public void addCandidateGroup(String taskId, String groupId) {
+
+	}
+
+	@Override
+	public void deleteCandidateGroup(String taskId, String groupId) {
+
+	}
+
 }

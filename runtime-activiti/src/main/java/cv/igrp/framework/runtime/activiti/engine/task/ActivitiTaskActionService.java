@@ -188,6 +188,24 @@ public class ActivitiTaskActionService implements TaskActionService {
 	}
 
 	@Override
+	public void addCandidateGroup(String taskId, String groupId) {
+		Objects.requireNonNull(taskId, "taskInstanceId cannot be null");
+		Objects.requireNonNull(groupId, "groupId cannot be null");
+		LOGGER.info("Adding candidate group '{}' to task with id: {}", groupId, taskId);
+		taskService.addCandidateGroup(taskId, groupId);
+		LOGGER.info("successfully added candidate group '{}' to task with id: {}", groupId, taskId);
+	}
+
+	@Override
+	public void deleteCandidateGroup(String taskId, String groupId) {
+		Objects.requireNonNull(taskId, "taskInstanceId cannot be null");
+		Objects.requireNonNull(groupId, "groupId cannot be null");
+		LOGGER.info("Removing candidate group '{}' from task with id: {}", groupId, taskId);
+		taskService.deleteCandidateGroup(taskId, groupId);
+		LOGGER.info("Candidate group '{}' successfully removed from task with id: {}", groupId, taskId);
+	}
+
+	@Override
     public void assignTask(String taskId, String userId, String reason) {
 
         LOGGER.info("Assigning task id: {} to user: {}", taskId, userId);
@@ -253,4 +271,5 @@ public class ActivitiTaskActionService implements TaskActionService {
             LOGGER.error("Error unclaiming task {}", taskId, e);
         }
     }
+
 }

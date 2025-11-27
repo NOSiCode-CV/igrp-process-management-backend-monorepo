@@ -25,4 +25,7 @@ public interface TaskActionService {
 
 	void setTaskPriority(String taskInstanceId, int priority);
 
+	void addCandidateGroup(String taskId, String groupId);
+
+	void deleteCandidateGroup(String taskId, String groupId);
 }
