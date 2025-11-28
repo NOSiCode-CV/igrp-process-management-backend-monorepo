@@ -1,6 +1,10 @@
 package cv.igrp.framework.runtime.core.engine.process.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProcessFilter {
+
     private Integer pageNumber;
     private Integer pageSize;
     private String id;
@@ -17,6 +21,7 @@ public class ProcessFilter {
     private IGRPProcessStatus status;
     private Long startedAfter;
     private Long startedBefore;
+	private List<VariablesExpression> variablesExpressions = new ArrayList<>();
 
     public Integer getPageNumber() {
         return pageNumber;
@@ -146,25 +151,34 @@ public class ProcessFilter {
         isLatestVersion = latestVersion;
     }
 
-    @Override
-    public String toString() {
-        return "ProcessFilter{" +
-               " startIndex=" + pageNumber +
-               ", maxResults=" + pageSize +
-               ", id='" + id + '\'' +
-               ", key='" + key + '\'' +
-               ", name='" + name + '\'' +
-               ", applicationBase='" + applicationBase + '\'' +
-               ", deploymentId='" + deploymentId + '\'' +
-               ", tenantId='" + tenantId + '\'' +
-               ", suspended=" + suspended +
-               ", isLatestVersion=" + isLatestVersion +
-               ", processDefinitionKey='" + processDefinitionKey + '\'' +
-               ", businessKey='" + businessKey + '\'' +
-               ", startUserId='" + startUserId + '\'' +
-               ", status=" + status +
-               ", startedAfter=" + startedAfter +
-               ", startedBefore=" + startedBefore +
-               '}';
-    }
+	public List<VariablesExpression> getVariablesExpressions() {
+		return variablesExpressions;
+	}
+
+	public void setVariablesExpressions(List<VariablesExpression> variablesExpressions) {
+		this.variablesExpressions = variablesExpressions;
+	}
+
+	@Override
+	public String toString() {
+		return "ProcessFilter{" +
+				"pageNumber=" + pageNumber +
+				", pageSize=" + pageSize +
+				", id='" + id + '\'' +
+				", key='" + key + '\'' +
+				", name='" + name + '\'' +
+				", applicationBase='" + applicationBase + '\'' +
+				", deploymentId='" + deploymentId + '\'' +
+				", tenantId='" + tenantId + '\'' +
+				", suspended=" + suspended +
+				", isLatestVersion=" + isLatestVersion +
+				", processDefinitionKey='" + processDefinitionKey + '\'' +
+				", businessKey='" + businessKey + '\'' +
+				", startUserId='" + startUserId + '\'' +
+				", status=" + status +
+				", startedAfter=" + startedAfter +
+				", startedBefore=" + startedBefore +
+				", variablesExpressions=" + variablesExpressions +
+				'}';
+	}
 }

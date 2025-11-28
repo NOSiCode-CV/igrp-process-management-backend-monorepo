@@ -8,10 +8,12 @@ import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.history.HistoricProcessInstanceQuery;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.impl.RuntimeServiceImpl;
 import org.activiti.engine.impl.identity.Authentication;
 import org.activiti.engine.runtime.Execution;
+import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Optional.*;
 
@@ -380,160 +383,216 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     }
 
 	@Override
-    public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
-        LOGGER.info("Listing process instances with filter: status={}, definitionKey={}, businessKey={}",
-                filter.getStatus(), filter.getProcessDefinitionKey(), filter.getBusinessKey());
+	public List<ProcessInstance> listProcessInstances(ProcessFilter filter) {
+		LOGGER.info("Listing process instances with filter: {}", filter);
 
-        LOGGER.debug("Processing filter parameters: {}", filter);
-        final var status = filter.getStatus();
+		var runtime = listRuntimeInstances(filter);
 
-        if (status == IGRPProcessStatus.RUNNING || status == IGRPProcessStatus.SUSPENDED) {
-            LOGGER.debug("Processing {} process instances query", status == IGRPProcessStatus.RUNNING ? "RUNNING" : "SUSPENDED");
+		var historic = listHistoricInstances(filter);
 
-            LOGGER.debug("Creating runtime process instance query");
-            var query = runtimeService.createProcessInstanceQuery();
+		LOGGER.info("Runtime: {}, Historic: {}", runtime.size(), historic.size());
 
-            ofNullable(filter.getProcessDefinitionKey())
-                    .ifPresent(key -> {
-                        LOGGER.debug("Filtering by process definition key: {}", key);
-                        query.processDefinitionKey(key);
-                    });
+		return Stream.concat(runtime.stream(), historic.stream())
+				.toList();
+	}
 
-            ofNullable(filter.getBusinessKey())
-                    .ifPresent(key -> {
-                        LOGGER.debug("Filtering by business key: {}", key);
-                        query.processInstanceBusinessKey(key);
-                    });
+	private List<ProcessInstance> listRuntimeInstances(ProcessFilter filter) {
 
-            ofNullable(filter.getStartUserId())
-                    .ifPresent(userId -> {
-                        LOGGER.debug("Filtering by start user id: {}", userId);
-                        query.startedBy(userId);
-                    });
+		var query = runtimeService.createProcessInstanceQuery();
+		LOGGER.debug("Creating runtime process instance query");
 
-            ofNullable(filter.getStartedAfter())
-                    .ifPresent(date -> {
-                        LOGGER.debug("Filtering by started after: {}", new Date(date));
-                        query.startedAfter(new Date(date));
-                    });
+		applyCommonFilters(query, filter);
+		applyStatusFilterRuntime(query, filter.getStatus());
 
-            ofNullable(filter.getStartedBefore())
-                    .ifPresent(date -> {
-                        LOGGER.debug("Filtering by started before: {}", new Date(date));
-                        query.startedBefore(new Date(date));
-                    });
+		var results = query.list(); // TODO pagination
 
-            if (status == IGRPProcessStatus.RUNNING) {
-                LOGGER.debug("Filtering for active process instances");
-                query.active();
-            } else {
-                LOGGER.debug("Filtering for suspended process instances");
-                query.suspended();
-            }
+		LOGGER.info("Found {} runtime process instances", results.size());
 
-            var results = query.list(); // TODO 29/07/2025 16:01 add pagination support
+		return results.stream()
+				.map(this::mapRuntimeInstance)
+				.toList();
+	}
 
-            LOGGER.info("Found {} process instances matching the filter criteria", results.size());
+	private List<ProcessInstance> listHistoricInstances(ProcessFilter filter) {
 
-            return results
-                    .stream()
-                    .map(instance -> new ProcessInstance(
-                            instance.getId(),
-                            instance.getName(),
-                            instance.getStartTime(),
-                            null,
-                            instance.getStartUserId(),
-                            instance.getProcessDefinitionId(),
-                            instance.getProcessDefinitionKey(),
-                            instance.getBusinessKey(),
-                            instance.getParentId(),
-                            instance.getProcessDefinitionVersion(),
-                            instance.getProcessDefinitionName(),
-                            instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING
-                    ))
-                    .toList();
-        }
+		var query = historyService.createHistoricProcessInstanceQuery();
+		LOGGER.debug("Creating historic process instance query");
 
-        LOGGER.debug("Creating historic process instance query");
+		applyCommonFilters(query, filter);
+		applyStatusFilterHistoric(query, filter.getStatus());
 
-        var query = historyService.createHistoricProcessInstanceQuery();
+		var results = query.list();
 
-        ofNullable(filter.getProcessDefinitionKey())
-                .ifPresent(key -> {
-                    LOGGER.debug("Filtering by process definition key: {}", key);
-                    query.processDefinitionKey(key);
-                });
+		LOGGER.info("Found {} historic process instances", results.size());
 
-        ofNullable(filter.getBusinessKey())
-                .ifPresent(key -> {
-                    LOGGER.debug("Filtering by business key: {}", key);
-                    query.processInstanceBusinessKey(key);
-                });
+		return results.stream()
+				.map(this::mapHistoricInstance)
+				.toList();
+	}
 
-        ofNullable(filter.getStartUserId())
-                .ifPresent(userId -> {
-                    LOGGER.debug("Filtering by start user id: {}", userId);
-                    query.startedBy(userId);
-                });
+	private void applyCommonFilters(ProcessInstanceQuery query, ProcessFilter filter) {
 
-        ofNullable(filter.getStartedAfter())
-                .ifPresent(date -> {
-                    LOGGER.debug("Filtering by started after: {}", new Date(date));
-                    query.startedAfter(new Date(date));
-                });
+		applyVariablesFilter(query, filter);
 
-        ofNullable(filter.getStartedBefore())
-                .ifPresent(date -> {
-                    LOGGER.debug("Filtering by started before: {}", new Date(date));
-                    query.startedBefore(new Date(date));
-                });
+		ofNullable(filter.getProcessDefinitionKey())
+				.ifPresent(key -> {
+					LOGGER.debug("Filtering by process definition key: {}", key);
+					query.processDefinitionKey(key);
+				});
 
-        ofNullable(status).ifPresent(s -> {
-            LOGGER.debug("Applying status filter: {}", s);
-            switch (s) {
-                case COMPLETED -> {
-                    LOGGER.debug("Filtering for completed process instances");
-                    query.finished();
-                }
-                case CANCELLED -> {
-                    LOGGER.debug("Filtering for cancelled process instances");
-                    query.deleted();
-                }
-                case CREATED -> {
-                    LOGGER.debug("Filtering for created/unfinished process instances");
-                    query.unfinished();
-                }
-            }
-        });
+		ofNullable(filter.getBusinessKey())
+				.ifPresent(key -> {
+					LOGGER.debug("Filtering by business key: {}", key);
+					query.processInstanceBusinessKey(key);
+				});
 
-        LOGGER.debug("Executing historic query and mapping results");
-        var results = query.list();
-        LOGGER.info("Found {} historic process instances matching the filter criteria", results.size());
+		ofNullable(filter.getStartUserId())
+				.ifPresent(userId -> {
+					LOGGER.debug("Filtering by start user id: {}", userId);
+					query.startedBy(userId);
+				});
 
-        return results
-                .stream()
-                .map(instance -> {
-                    var resolvedStatus = resolveStatus(instance);
-                    return new ProcessInstance(
-                            instance.getId(),
-                            instance.getName(),
-                            instance.getStartTime(),
-                            instance.getEndTime(),
-                            instance.getStartUserId(),
-                            instance.getProcessDefinitionId(),
-                            instance.getProcessDefinitionKey(),
-                            instance.getBusinessKey(),
-                            null,
-                            instance.getProcessDefinitionVersion(),
-                            instance.getProcessDefinitionName(),
-                            resolvedStatus
-                    );
-                })
-                .toList();
-    }
+		ofNullable(filter.getStartedAfter())
+				.ifPresent(date -> {
+					LOGGER.debug("Filtering by started after: {}", new Date(date));
+					query.startedAfter(new Date(date));
+				});
 
+		ofNullable(filter.getStartedBefore())
+				.ifPresent(date -> {
+					LOGGER.debug("Filtering by started before: {}", new Date(date));
+					query.startedBefore(new Date(date));
+				});
+	}
 
-    private IGRPProcessStatus resolveStatus(HistoricProcessInstance instance) {
+	private void applyCommonFilters(HistoricProcessInstanceQuery query, ProcessFilter filter) {
+
+		applyVariablesFilter(query, filter);
+
+		ofNullable(filter.getProcessDefinitionKey())
+				.ifPresent(key -> {
+					LOGGER.debug("Filtering by process definition key: {}", key);
+					query.processDefinitionKey(key);
+				});
+
+		ofNullable(filter.getBusinessKey())
+				.ifPresent(key -> {
+					LOGGER.debug("Filtering by business key: {}", key);
+					query.processInstanceBusinessKey(key);
+				});
+
+		ofNullable(filter.getStartUserId())
+				.ifPresent(userId -> {
+					LOGGER.debug("Filtering by start user id: {}", userId);
+					query.startedBy(userId);
+				});
+
+		ofNullable(filter.getStartedAfter())
+				.ifPresent(date -> {
+					LOGGER.debug("Filtering by started after: {}", new Date(date));
+					query.startedAfter(new Date(date));
+				});
+
+		ofNullable(filter.getStartedBefore())
+				.ifPresent(date -> {
+					LOGGER.debug("Filtering by started before: {}", new Date(date));
+					query.startedBefore(new Date(date));
+				});
+	}
+
+	private void applyVariablesFilter(ProcessInstanceQuery query, ProcessFilter filter) {
+		filter.getVariablesExpressions().forEach(vExpression -> {
+			VariablesOperator op = vExpression.getOperator();
+			String name = vExpression.getName();
+			Object value = vExpression.getValue();
+			switch (op) {
+				case EQUALS -> query.variableValueEquals(name, value);
+				case EQUALS_IGNORE_CASE -> query.variableValueEqualsIgnoreCase(name, String.valueOf(value));
+				case NOT_EQUALS -> query.variableValueNotEquals(name, value);
+				case GREATER_THAN -> query.variableValueGreaterThan(name, value);
+				case GREATER_THAN_OR_EQUAL -> query.variableValueGreaterThanOrEqual(name, value);
+				case LESS_THAN -> query.variableValueLessThan(name, value);
+				case LESS_THAN_OR_EQUAL -> query.variableValueLessThanOrEqual(name, value);
+				case LIKE -> query.variableValueLike(name, value.toString());
+				case LIKE_IGNORE_CASE -> query.variableValueLikeIgnoreCase(name, value.toString());
+				default -> { }
+			}
+		});
+	}
+
+	private void applyVariablesFilter(HistoricProcessInstanceQuery query, ProcessFilter filter) {
+		filter.getVariablesExpressions().forEach(vExpression -> {
+			VariablesOperator op = vExpression.getOperator();
+			String name = vExpression.getName();
+			Object value = vExpression.getValue();
+
+			switch (op) {
+				case EQUALS -> query.variableValueEquals(name, value);
+				case EQUALS_IGNORE_CASE -> query.variableValueEqualsIgnoreCase(name, String.valueOf(value));
+				case NOT_EQUALS -> query.variableValueNotEquals(name, value);
+				case GREATER_THAN -> query.variableValueGreaterThan(name, value);
+				case GREATER_THAN_OR_EQUAL -> query.variableValueGreaterThanOrEqual(name, value);
+				case LESS_THAN -> query.variableValueLessThan(name, value);
+				case LESS_THAN_OR_EQUAL -> query.variableValueLessThanOrEqual(name, value);
+				case LIKE -> query.variableValueLike(name, value.toString());
+				case LIKE_IGNORE_CASE -> query.variableValueLikeIgnoreCase(name, value.toString());
+				default -> { }
+			}
+		});
+	}
+
+	private void applyStatusFilterRuntime(ProcessInstanceQuery query, IGRPProcessStatus status) {
+		if (status == IGRPProcessStatus.RUNNING) {
+			query.active();
+		} else if (status == IGRPProcessStatus.SUSPENDED) {
+			query.suspended();
+		}
+	}
+
+	private void applyStatusFilterHistoric(HistoricProcessInstanceQuery query, IGRPProcessStatus status) {
+		if (status == null) return;
+		switch (status) {
+			case COMPLETED -> query.finished();
+			case CANCELLED -> query.deleted();
+			case CREATED   -> query.unfinished();
+		}
+	}
+
+	private ProcessInstance mapRuntimeInstance(org.activiti.engine.runtime.ProcessInstance instance) {
+		return new ProcessInstance(
+				instance.getId(),
+				instance.getName(),
+				instance.getStartTime(),
+				null,
+				instance.getStartUserId(),
+				instance.getProcessDefinitionId(),
+				instance.getProcessDefinitionKey(),
+				instance.getBusinessKey(),
+				instance.getParentId(),
+				instance.getProcessDefinitionVersion(),
+				instance.getProcessDefinitionName(),
+				instance.isSuspended() ? IGRPProcessStatus.SUSPENDED : IGRPProcessStatus.RUNNING
+		);
+	}
+
+	private ProcessInstance mapHistoricInstance(HistoricProcessInstance instance) {
+		return new ProcessInstance(
+				instance.getId(),
+				instance.getName(),
+				instance.getStartTime(),
+				instance.getEndTime(),
+				instance.getStartUserId(),
+				instance.getProcessDefinitionId(),
+				instance.getProcessDefinitionKey(),
+				instance.getBusinessKey(),
+				null,
+				instance.getProcessDefinitionVersion(),
+				instance.getProcessDefinitionName(),
+				resolveStatus(instance)
+		);
+	}
+
+	private IGRPProcessStatus resolveStatus(HistoricProcessInstance instance) {
 
         LOGGER.debug("Resolving status for historic process instance: id={}", instance.getId());
 
