@@ -1,5 +1,6 @@
 package cv.igrp.framework.runtime.camunda.engine.task;
 
+import cv.igrp.framework.runtime.core.engine.process.model.TaskFilter;
 import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
 
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessTaskInfo;
@@ -45,6 +46,11 @@ public class CamundaTaskQueryService implements TaskQueryService {
 
 	@Override
 	public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
+		return List.of();
+	}
+
+	@Override
+	public List<TaskInfo> listTaskInstances(TaskFilter filter) {
 		return List.of();
 	}
 

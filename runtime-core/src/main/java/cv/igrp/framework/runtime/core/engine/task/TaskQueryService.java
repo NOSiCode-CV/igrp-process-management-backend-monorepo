@@ -1,5 +1,7 @@
 package cv.igrp.framework.runtime.core.engine.task;
 
+
+import cv.igrp.framework.runtime.core.engine.process.model.TaskFilter;
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessTaskInfo;
 import cv.igrp.framework.runtime.core.engine.task.model.TaskInfo;
 import cv.igrp.framework.runtime.core.engine.task.model.TaskVariableInstance;
@@ -20,5 +22,7 @@ public interface TaskQueryService {
     List<TaskInfo> getActiveTaskInstances(String processInstanceId);
 
     List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId);
+
+	List<TaskInfo> listTaskInstances(TaskFilter filter);
 
 }

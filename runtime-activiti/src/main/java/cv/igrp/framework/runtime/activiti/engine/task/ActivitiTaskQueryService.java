@@ -1,5 +1,7 @@
 package cv.igrp.framework.runtime.activiti.engine.task;
 
+import cv.igrp.framework.runtime.core.engine.process.model.TaskFilter;
+import cv.igrp.framework.runtime.core.engine.process.model.VariablesExpression;
 import cv.igrp.framework.runtime.core.engine.task.TaskQueryService;
 import cv.igrp.framework.runtime.core.engine.task.model.*;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
@@ -14,6 +16,7 @@ import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.IdentityLink;
+import org.activiti.engine.task.TaskQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -121,6 +124,76 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 				})
 				.toList();
 	}
+
+	@Override
+	public List<TaskInfo> listTaskInstances(TaskFilter filter) {
+
+		Objects.requireNonNull(filter, "Task filter cannot be null");
+
+		TaskQuery query = taskService.createTaskQuery();
+
+		if (filter.getId() != null && !filter.getId().isBlank()) {
+			query.taskId(filter.getId());
+		}
+
+		if (filter.getName() != null && !filter.getName().isBlank()) {
+			query.taskNameLike(filter.getName());
+		}
+
+		if (filter.getDescription() != null && !filter.getDescription().isBlank()) {
+			query.taskDescriptionLike(filter.getDescription());
+		}
+
+		if (filter.getProcessInstanceId() != null && !filter.getProcessInstanceId().isBlank()) {
+			query.processInstanceId(filter.getProcessInstanceId());
+		}
+
+		if (filter.getTaskDefinitionKey() != null && !filter.getTaskDefinitionKey().isBlank()) {
+			query.taskDefinitionKey(filter.getTaskDefinitionKey());
+		}
+
+		if (filter.getVariablesExpressions() != null && !filter.getVariablesExpressions().isEmpty()) {
+			for (VariablesExpression exp : filter.getVariablesExpressions()) {
+
+				String var = exp.getName();
+				Object val = exp.getValue();
+
+				switch (exp.getOperator()) {
+					case EQUALS -> query.taskVariableValueEquals(var, val);
+					case NOT_EQUALS -> query.taskVariableValueNotEquals(var, val);
+					case GREATER_THAN -> query.taskVariableValueGreaterThan(var, val);
+					case LESS_THAN -> query.taskVariableValueLessThan(var, val);
+					case GREATER_THAN_OR_EQUAL -> query.taskVariableValueGreaterThanOrEqual(var, val);
+					case LESS_THAN_OR_EQUAL -> query.taskVariableValueLessThanOrEqual(var, val);
+					case LIKE -> query.taskVariableValueLike(var, "%" + val + "%");
+					case LIKE_IGNORE_CASE -> query.taskVariableValueLikeIgnoreCase(var, "%" + val + "%");
+					default -> throw new IllegalArgumentException("Unsupported operator: " + exp.getOperator());
+				}
+			}
+		}
+
+		return query
+				.orderByTaskCreateTime()
+				.asc()
+				.list()
+				.stream()
+				.map(task -> new TaskInfo(
+						task.getId(),
+						task.getName(),
+						task.getDescription(),
+						task.getProcessInstanceId(),
+						task.getTaskDefinitionKey(),
+						task.getAssignee(),
+						task.getOwner(),
+						task.getCreateTime(),
+						task.getDueDate(),
+						task.getPriority(),
+						task.getFormKey(),
+						getCandidateGroups(task.getId())
+				))
+				.toList();
+	}
+
 
 	@Override
 	public List<ProcessTaskInfo> getUserTaskProgress(String processInstanceId) {
