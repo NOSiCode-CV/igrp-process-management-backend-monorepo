@@ -128,6 +128,8 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 	@Override
 	public List<TaskInfo> listTaskInstances(TaskFilter filter) {
 
+		LOGGER.info("listTaskInstances() called with filter: {}", filter);
+
 		Objects.requireNonNull(filter, "Task filter cannot be null");
 
 		TaskQuery query = taskService.createTaskQuery();
@@ -153,10 +155,14 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 		}
 
 		if (filter.getVariablesExpressions() != null && !filter.getVariablesExpressions().isEmpty()) {
+
 			for (VariablesExpression exp : filter.getVariablesExpressions()) {
 
 				String var = exp.getName();
 				Object val = exp.getValue();
+
+				LOGGER.debug("Variable Filter → name='{}', operator='{}', value='{}'",
+						var, exp.getOperator(), val);
 
 				switch (exp.getOperator()) {
 					case EQUALS -> query.taskVariableValueEquals(var, val);
@@ -172,7 +178,7 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 			}
 		}
 
-		return query
+		List<TaskInfo> result = query
 				.orderByTaskCreateTime()
 				.asc()
 				.list()
@@ -192,6 +198,10 @@ public class ActivitiTaskQueryService implements TaskQueryService {
 						getCandidateGroups(task.getId())
 				))
 				.toList();
+
+		LOGGER.info("Finished listTaskInstances(). Returning {} TaskInfo objects.", result.size());
+
+		return result;
 	}
 
 
