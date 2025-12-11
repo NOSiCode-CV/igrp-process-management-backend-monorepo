@@ -5,6 +5,7 @@ import cv.igrp.framework.runtime.core.engine.process.model.*;
 import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
 import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.HistoryService;
+import org.activiti.engine.ManagementService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.history.HistoricProcessInstance;
@@ -12,7 +13,9 @@ import org.activiti.engine.history.HistoricProcessInstanceQuery;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.impl.RuntimeServiceImpl;
 import org.activiti.engine.impl.identity.Authentication;
+import org.activiti.engine.impl.persistence.entity.TimerJobEntity;
 import org.activiti.engine.runtime.Execution;
+import org.activiti.engine.runtime.Job;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +36,18 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
     private final ProcessRuntime processRuntime;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
-    private final RepositoryService repositoryService;
+    private final ManagementService managementService;
 
-    public ActivitiProcessManagerAdapter(ProcessRuntime processRuntime, RuntimeService runtimeService, HistoryService historyService, RepositoryService repositoryService) {
+	public ActivitiProcessManagerAdapter(ProcessRuntime processRuntime,
+										 RuntimeService runtimeService,
+										 HistoryService historyService,
+										 ManagementService managementService
+	) {
         this.processRuntime = processRuntime;
         this.runtimeService = runtimeService;
         this.historyService = historyService;
-        this.repositoryService = repositoryService;
-    }
+		this.managementService = managementService;
+	}
 
     @Override
     public ProcessInstance createProcess(String processDefinitionId, String businessKey) {
@@ -734,5 +741,55 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 		}
 	}
 
+	@Override
+	public void rescheduleTimer(String processInstanceId, long seconds) {
+
+		LOGGER.info("Rescheduling timer for process instance {} by {} seconds",
+				processInstanceId, seconds);
+
+		Job timerJob = managementService.createTimerJobQuery()
+				.processInstanceId(processInstanceId)
+				.singleResult();
+
+		if (timerJob == null) {
+			LOGGER.error("No timer job found for process instance {}", processInstanceId);
+			throw new IllegalStateException("No timer job found for process instance " + processInstanceId);
+		}
+
+		Date newDueDate = new Date(System.currentTimeMillis() + seconds * 1000);
+
+		LOGGER.debug("Found timer job {} with current due date {}. New due date will be {}",
+				timerJob.getId(),
+				timerJob.getDuedate(),
+				newDueDate
+		);
+
+		managementService.executeCommand(commandContext -> {
+
+			TimerJobEntity jobEntity = commandContext
+					.getDbSqlSession()
+					.selectById(TimerJobEntity.class, timerJob.getId());
+
+			if (jobEntity == null) {
+				LOGGER.error("TimerJobEntity not found in DB for id {}", timerJob.getId());
+				throw new IllegalStateException("TimerJobEntity not found for id " + timerJob.getId());
+			}
+
+			Date oldDate = jobEntity.getDuedate();
+			jobEntity.setDuedate(newDueDate);
+
+			commandContext.getDbSqlSession().update(jobEntity);
+
+			LOGGER.info(
+					"Timer job {} for process {} successfully rescheduled. Old due date: {} → New due date: {}",
+					timerJob.getId(),
+					processInstanceId,
+					oldDate,
+					newDueDate
+			);
+
+			return null;
+		});
+	}
 
 }

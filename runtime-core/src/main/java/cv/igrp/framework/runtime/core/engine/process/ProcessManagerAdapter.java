@@ -42,4 +42,6 @@ public interface ProcessManagerAdapter {
 
 	void signal(String processInstanceId, String taskId, Map<String, Object> processVariables);
 
+	void rescheduleTimer(String processInstanceId, long seconds);
+
 }
