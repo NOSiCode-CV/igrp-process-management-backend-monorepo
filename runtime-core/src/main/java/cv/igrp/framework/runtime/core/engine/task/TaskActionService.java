@@ -19,8 +19,6 @@ public interface TaskActionService {
 
     boolean resolveDelegatedTask(String taskId, String delegateUserId, String comment);
 
-    void setTaskVariables(String taskId, Map<String, Object> variables);
-
     boolean setTaskDueDate(String taskId, long dueDate);
 
 	void setTaskPriority(String taskInstanceId, int priority);

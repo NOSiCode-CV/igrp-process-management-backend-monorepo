@@ -49,11 +49,6 @@ public class CamundaTaskActionService implements TaskActionService {
 	}
 
 	@Override
-	public void setTaskVariables(String taskId, Map<String, Object> variables) {
-
-	}
-
-	@Override
 	public boolean setTaskDueDate(String taskId, long dueDate) {
 		return false;
 	}

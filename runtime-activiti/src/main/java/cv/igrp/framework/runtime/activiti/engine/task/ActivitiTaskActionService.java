@@ -1,7 +1,6 @@
 package cv.igrp.framework.runtime.activiti.engine.task;
 
 import cv.igrp.framework.runtime.core.engine.task.TaskActionService;
-import org.activiti.api.model.shared.model.VariableInstance;
 import org.activiti.api.task.model.builders.TaskPayloadBuilder;
 import org.activiti.api.task.runtime.TaskRuntime;
 import org.activiti.engine.RuntimeService;
@@ -21,12 +20,11 @@ public class ActivitiTaskActionService implements TaskActionService {
 
     private final TaskRuntime taskRuntime;
     private final TaskService taskService;
-    private final RuntimeService runtimeService;
 
-    public ActivitiTaskActionService(TaskRuntime taskRuntime, TaskService taskService, RuntimeService runtimeService) {
+    public ActivitiTaskActionService(TaskRuntime taskRuntime,
+									 TaskService taskService) {
         this.taskRuntime = taskRuntime;
         this.taskService = taskService;
-        this.runtimeService = runtimeService;
     }
 
     @Override
@@ -39,9 +37,12 @@ public class ActivitiTaskActionService implements TaskActionService {
         if (variables != null)
 			LOGGER.debug("Variables: {}", variables);
 
+		taskService.setVariables(taskId, variables);
+
+		LOGGER.info("Task with id: {} successfully set variables [forms]", taskId);
+
         var payload = TaskPayloadBuilder.complete()
                 .withTaskId(taskId)
-                .withVariables(variables)
                 .build();
 
         taskRuntime.complete(payload);
@@ -60,41 +61,18 @@ public class ActivitiTaskActionService implements TaskActionService {
             LOGGER.debug("Variables: {}", variables);
         }
 
-        var taskVariablesPayload = TaskPayloadBuilder.variables().withTaskId(taskId).build();
+		taskService.setVariables(taskId, variables);
 
-        var taskVariables = taskRuntime.variables(taskVariablesPayload);
-        var taskVariablesNames = taskVariables.stream().map(VariableInstance::getName).toList();
-
-        LOGGER.debug("Current task variables: {}", taskVariablesNames);
+		LOGGER.info("Task with id: {} successfully set variables [forms]", taskId);
 
         var payload = TaskPayloadBuilder.save()
                 .withTaskId(taskId)
-                .withVariables(variables)
                 .build();
 
         taskRuntime.save(payload);
 
         LOGGER.info("Task with id: {} successfully saved", taskId);
-
     }
-
-    @Override
-    public void setTaskVariables(String taskId, Map<String, Object> variables) {
-
-        Objects.requireNonNull(taskId, "taskId cannot be null");
-
-        LOGGER.info("Setting variables for task with id: {}", taskId);
-
-        if (variables != null && !variables.isEmpty()) {
-            LOGGER.debug("Variables: {}", variables);
-            runtimeService.setVariables(taskId, variables);
-            LOGGER.info("Variables successfully set for task with id: {}", taskId);
-            return;
-        }
-
-        LOGGER.debug("No variables to set for task id: {}, skipping operation", taskId);
-    }
-
 
     @Override
     public boolean delegateTask(String taskId, String ownerUserId, String delegateUserId, String reason) {
