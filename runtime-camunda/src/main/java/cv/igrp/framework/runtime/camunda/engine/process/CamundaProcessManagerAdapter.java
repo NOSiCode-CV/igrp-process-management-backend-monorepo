@@ -93,6 +93,11 @@ public class CamundaProcessManagerAdapter implements ProcessManagerAdapter {
 	}
 
 	@Override
+	public void rescheduleTimer(String processInstanceId, String timerEventId, long seconds) {
+
+	}
+
+	@Override
 	public void rescheduleTimer(String processInstanceId, long seconds) {
 
 	}

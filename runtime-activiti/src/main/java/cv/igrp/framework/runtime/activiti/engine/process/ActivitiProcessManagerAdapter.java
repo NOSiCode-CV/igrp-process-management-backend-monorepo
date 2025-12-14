@@ -13,6 +13,7 @@ import org.activiti.engine.history.HistoricProcessInstanceQuery;
 import org.activiti.engine.history.HistoricVariableInstance;
 import org.activiti.engine.impl.RuntimeServiceImpl;
 import org.activiti.engine.impl.identity.Authentication;
+import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
 import org.activiti.engine.impl.persistence.entity.TimerJobEntity;
 import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.Job;
@@ -743,53 +744,84 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 
 	@Override
 	public void rescheduleTimer(String processInstanceId, long seconds) {
-
-		LOGGER.info("Rescheduling timer for process instance {} by {} seconds",
+		LOGGER.info("Rescheduling first timer for process instance {} by {} seconds",
 				processInstanceId, seconds);
 
-		Job timerJob = managementService.createTimerJobQuery()
-				.processInstanceId(processInstanceId)
-				.singleResult();
+		rescheduleTimerInternal(processInstanceId, null, seconds);
+	}
 
-		if (timerJob == null) {
-			LOGGER.error("No timer job found for process instance {}", processInstanceId);
-			throw new IllegalStateException("No timer job found for process instance " + processInstanceId);
+	@Override
+	public void rescheduleTimer(String processInstanceId, String timerEventId, long seconds) {
+		LOGGER.info("Rescheduling timer '{}' for process instance {} by {} seconds",
+				timerEventId, processInstanceId, seconds);
+
+		rescheduleTimerInternal(processInstanceId, timerEventId, seconds);
+	}
+
+	private void rescheduleTimerInternal(String processInstanceId,
+										 String timerEventId,
+										 long seconds) {
+
+		List<Job> timerJobs = managementService.createTimerJobQuery()
+				.processInstanceId(processInstanceId)
+				.list();
+
+		if (timerJobs.isEmpty()) {
+			throw new IllegalStateException(
+					"No timer jobs found for process instance " + processInstanceId);
+		}
+
+		TimerJobEntity targetJob = managementService.executeCommand(commandContext -> {
+			for (Job job : timerJobs) {
+
+				TimerJobEntity jobEntity = commandContext.getDbSqlSession()
+						.selectById(TimerJobEntity.class, job.getId());
+
+				if (jobEntity == null) {
+					continue;
+				}
+
+				// If no timerEventId provided → take first timer
+				if (timerEventId == null) {
+					return jobEntity;
+				}
+
+				if (jobEntity.getExecutionId() != null) {
+					ExecutionEntity execution = commandContext.getExecutionEntityManager()
+							.findById(jobEntity.getExecutionId());
+
+					if (execution != null && timerEventId.equals(execution.getActivityId())) {
+						return jobEntity;
+					}
+				}
+			}
+			return null;
+		});
+
+		if (targetJob == null) {
+			throw new IllegalStateException(
+					timerEventId != null
+							? "No timer job found for timer event ID '" + timerEventId + "'"
+							: "No timer job found for process instance " + processInstanceId
+			);
 		}
 
 		Date newDueDate = new Date(System.currentTimeMillis() + seconds * 1000);
-
-		LOGGER.debug("Found timer job {} with current due date {}. New due date will be {}",
-				timerJob.getId(),
-				timerJob.getDuedate(),
-				newDueDate
-		);
+		Date oldDate = targetJob.getDuedate();
 
 		managementService.executeCommand(commandContext -> {
-
-			TimerJobEntity jobEntity = commandContext
-					.getDbSqlSession()
-					.selectById(TimerJobEntity.class, timerJob.getId());
-
-			if (jobEntity == null) {
-				LOGGER.error("TimerJobEntity not found in DB for id {}", timerJob.getId());
-				throw new IllegalStateException("TimerJobEntity not found for id " + timerJob.getId());
-			}
-
-			Date oldDate = jobEntity.getDuedate();
-			jobEntity.setDuedate(newDueDate);
-
-			commandContext.getDbSqlSession().update(jobEntity);
-
-			LOGGER.info(
-					"Timer job {} for process {} successfully rescheduled. Old due date: {} → New due date: {}",
-					timerJob.getId(),
-					processInstanceId,
-					oldDate,
-					newDueDate
-			);
-
+			targetJob.setDuedate(newDueDate);
+			commandContext.getDbSqlSession().update(targetJob);
 			return null;
 		});
+
+		LOGGER.info(
+				"Timer job {} for process {} successfully rescheduled. Old due date: {} → New due date: {}",
+				targetJob.getId(),
+				processInstanceId,
+				oldDate,
+				newDueDate
+		);
 	}
 
 }
