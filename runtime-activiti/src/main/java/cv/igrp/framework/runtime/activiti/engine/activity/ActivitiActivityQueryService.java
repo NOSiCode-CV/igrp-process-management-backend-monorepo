@@ -7,7 +7,6 @@ import org.activiti.engine.*;
 import org.activiti.engine.history.*;
 import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.ProcessInstance;
-import org.activiti.engine.task.IdentityLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,8 +15,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 
 @Service
 public class ActivitiActivityQueryService implements ActivityQueryService {
@@ -27,16 +24,14 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 	private final HistoryService historyService;
 	private final RuntimeService runtimeService;
 	private final RepositoryService repositoryService;
-	private final TaskService taskService;
 
 	public ActivitiActivityQueryService(HistoryService historyService,
 										RuntimeService runtimeService,
-										RepositoryService repositoryService,
-										TaskService taskService) {
+										RepositoryService repositoryService
+	) {
 		this.historyService = historyService;
 		this.runtimeService = runtimeService;
 		this.repositoryService = repositoryService;
-		this.taskService = taskService;
 	}
 
 	@Override
@@ -44,27 +39,49 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 		Objects.requireNonNull(activityId, "activityId cannot be null");
 		LOGGER.info("Retrieving activity with id: {}", activityId);
 
-		try {
-			Execution execution = runtimeService.createExecutionQuery().activityId(activityId).singleResult();
-			if (execution == null) return empty();
+		// Try RUNTIME (activityId = BPMN activity id)
+		Execution execution = runtimeService
+				.createExecutionQuery()
+				.activityId(activityId)
+				.singleResult();
 
-			ActivityInfo activityInfo = new ActivityInfo(
+		if (execution != null) {
+			return Optional.of(new ActivityInfo(
 					execution.getId(),
 					execution.getActivityId(),
 					null,
 					execution.getProcessInstanceId(),
 					execution.getParentId(),
 					execution.getParentProcessInstanceId(),
-					execution.isEnded() ? IGRPActivityStatus.COMPLETED :
-							execution.isSuspended() ? IGRPActivityStatus.SUSPENDED : IGRPActivityStatus.CURRENT,
+					execution.isSuspended()
+							? IGRPActivityStatus.SUSPENDED
+							: IGRPActivityStatus.CURRENT,
 					determineActivityTypeById(execution.getActivityId())
-			);
-			return of(activityInfo);
-
-		} catch (Exception e) {
-			LOGGER.error("Error getting activity with id: {}", activityId, e);
-			return empty();
+			));
 		}
+
+		// Try HISTORY (activityId = historic activity instance id)
+		HistoricActivityInstance hai = historyService
+				.createHistoricActivityInstanceQuery()
+				.activityInstanceId(activityId)
+				.singleResult();
+
+		if (hai != null) {
+			return Optional.of(new ActivityInfo(
+					hai.getId(),
+					hai.getActivityId(),
+					hai.getTaskId(),
+					hai.getProcessInstanceId(),
+					hai.getExecutionId(),
+					null,
+					hai.getEndTime() != null
+							? IGRPActivityStatus.COMPLETED
+							: IGRPActivityStatus.CURRENT,
+					determineActivityTypeById(hai.getActivityId())
+			));
+		}
+
+		return Optional.empty();
 	}
 
 	@Override
@@ -238,6 +255,7 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 				}
 
 				result.add(new ProcessActivityInfo(
+						lastExecution != null ? lastExecution.getId() : null,
 						activityKey,
 						activityName,
 						status,
@@ -258,6 +276,7 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 			else {
 
 				result.add(new ProcessActivityInfo(
+						lastExecution != null ? lastExecution.getId() : null,
 						activityKey,
 						activityName,
 						status,

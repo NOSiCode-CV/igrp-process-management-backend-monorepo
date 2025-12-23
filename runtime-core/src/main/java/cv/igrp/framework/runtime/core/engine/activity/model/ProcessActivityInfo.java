@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Set;
 
 public record ProcessActivityInfo(
+		String activityId,
         String activityKey,
         String activityName,
         IGRPActivityStatus status,
