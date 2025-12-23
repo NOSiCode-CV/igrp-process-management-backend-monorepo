@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -91,15 +92,15 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 
 	@Override
 	public List<ProcessActivityInfo> getActivityProgress(String processInstanceId) {
+
 		LOGGER.debug("Getting activities for BPMN progress drawing, processInstanceId: {}", processInstanceId);
 
-		// 1. Get all historic tasks (completed and running)
+		// 1. Get all historic tasks
 		List<HistoricTaskInstance> historicTasks = historyService
 				.createHistoricTaskInstanceQuery()
 				.processInstanceId(processInstanceId)
 				.list();
 
-		// 2. Build lookup maps for tasks by taskDefinitionKey (activityKey)
 		Map<String, List<HistoricTaskInstance>> tasksByKey = historicTasks.stream()
 				.collect(Collectors.groupingBy(HistoricTaskInstance::getTaskDefinitionKey));
 
@@ -112,6 +113,14 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 				.filter(t -> t.getEndTime() == null)
 				.map(HistoricTaskInstance::getTaskDefinitionKey)
 				.collect(Collectors.toSet());
+
+		// 2. Get historic activity executions (ALL BPMN activities)
+		Map<String, List<HistoricActivityInstance>> activitiesByKey =
+				historyService.createHistoricActivityInstanceQuery()
+						.processInstanceId(processInstanceId)
+						.list()
+						.stream()
+						.collect(Collectors.groupingBy(HistoricActivityInstance::getActivityId));
 
 		// 3. Resolve process definition id
 		String processDefinitionId;
@@ -126,6 +135,7 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 					.createHistoricProcessInstanceQuery()
 					.processInstanceId(processInstanceId)
 					.singleResult();
+
 			if (historicInstance == null) {
 				LOGGER.warn("No process instance found with ID {}", processInstanceId);
 				return List.of();
@@ -133,83 +143,177 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 			processDefinitionId = historicInstance.getProcessDefinitionId();
 		}
 
-		// 4. Walk all BPMN flow elements
+		// 4. Walk BPMN model
 		Collection<FlowElement> flowElements = repositoryService
 				.getBpmnModel(processDefinitionId)
 				.getMainProcess()
 				.getFlowElements();
 
 		List<ProcessActivityInfo> result = new ArrayList<>();
-		collectAllActivities(flowElements, result, processInstanceId, completedTaskKeys, currentTaskKeys, tasksByKey);
+
+		collectAllActivities(
+				flowElements,
+				result,
+				processInstanceId,
+				completedTaskKeys,
+				currentTaskKeys,
+				tasksByKey,
+				activitiesByKey
+		);
 
 		return result;
 	}
 
-	private void collectAllActivities(Collection<FlowElement> flowElements,
-									  List<ProcessActivityInfo> result,
-									  String processInstanceId,
-									  Set<String> completedTaskKeys,
-									  Set<String> currentTaskKeys,
-									  Map<String, List<HistoricTaskInstance>> tasksByKey) {
+	private void collectAllActivities(
+			Collection<FlowElement> flowElements,
+			List<ProcessActivityInfo> result,
+			String processInstanceId,
+			Set<String> completedTaskKeys,
+			Set<String> currentTaskKeys,
+			Map<String, List<HistoricTaskInstance>> tasksByKey,
+			Map<String, List<HistoricActivityInstance>> activitiesByKey
+	) {
 
 		for (FlowElement element : flowElements) {
-			String activityKey = element.getId();
 
-			// Compute status (completed/current/etc.)
+			String activityKey = element.getId();
+			String activityName = element.getName();
+
 			IGRPActivityStatus status = computeStatus(activityKey, completedTaskKeys, currentTaskKeys);
 			IGRPActivityType type = determineActivityType(element);
 
-			if (element instanceof UserTask) {
-				List<HistoricTaskInstance> tasks = tasksByKey.getOrDefault(activityKey, List.of());
+			// -------------------------------
+			// Execution timing (ALL activities)
+			// -------------------------------
+			List<HistoricActivityInstance> activityHistory =
+					activitiesByKey.getOrDefault(activityKey, List.of());
 
-				// Collect assignees, candidate users/groups
+			// If multiple executions (loops, multi-instance), take last execution
+			HistoricActivityInstance lastExecution =
+					activityHistory.isEmpty() ? null : activityHistory.get(activityHistory.size() - 1);
+
+			Instant startTime = lastExecution != null && lastExecution.getStartTime() != null
+					? lastExecution.getStartTime().toInstant()
+					: null;
+
+			Instant endTime = lastExecution != null && lastExecution.getEndTime() != null
+					? lastExecution.getEndTime().toInstant()
+					: null;
+
+			Long durationMillis = lastExecution != null
+					? lastExecution.getDurationInMillis()
+					: null;
+
+			// -------------------------------
+			// USER TASK
+			// -------------------------------
+			if (element instanceof UserTask) {
+
+				List<HistoricTaskInstance> tasks =
+						tasksByKey.getOrDefault(activityKey, List.of());
+
+				String assignee = null;
 				Set<String> candidateUsers = new HashSet<>();
 				Set<String> candidateGroups = new HashSet<>();
-				String assignee = null;
 
 				for (HistoricTaskInstance task : tasks) {
+
 					if (assignee == null) {
 						assignee = task.getAssignee();
 					}
 
-					List<HistoricIdentityLink> identityLinks = historyService.getHistoricIdentityLinksForTask(task.getId());
+					List<HistoricIdentityLink> identityLinks =
+							historyService.getHistoricIdentityLinksForTask(task.getId());
+
 					for (HistoricIdentityLink il : identityLinks) {
 						if ("candidate".equals(il.getType())) {
-							if (il.getUserId() != null) candidateUsers.add(il.getUserId());
-							if (il.getGroupId() != null) candidateGroups.add(il.getGroupId());
+							if (il.getUserId() != null) {
+								candidateUsers.add(il.getUserId());
+							}
+							if (il.getGroupId() != null) {
+								candidateGroups.add(il.getGroupId());
+							}
 						}
 					}
 				}
 
-				result.add(new ProcessActivityInfo(activityKey, element.getName(), status, type,
-						processInstanceId, assignee, candidateUsers, candidateGroups));
+				result.add(new ProcessActivityInfo(
+						activityKey,
+						activityName,
+						status,
+						type,
+						processInstanceId,
+						assignee,
+						candidateUsers.isEmpty() ? null : candidateUsers,
+						candidateGroups.isEmpty() ? null : candidateGroups,
+						startTime,
+						endTime,
+						durationMillis
+				));
 
-			} else {
-				result.add(new ProcessActivityInfo(activityKey, element.getName(), status, type,
-						processInstanceId, null, null, null));
+			}
+			// -------------------------------
+			// NON-USER TASK
+			// -------------------------------
+			else {
+
+				result.add(new ProcessActivityInfo(
+						activityKey,
+						activityName,
+						status,
+						type,
+						processInstanceId,
+						null,
+						null,
+						null,
+						startTime,
+						endTime,
+						durationMillis
+				));
 			}
 
-			// Recursively handle subprocesses
+			// -------------------------------
+			// SUBPROCESS (recursive)
+			// -------------------------------
 			if (element instanceof SubProcess subProcess) {
-				collectAllActivities(subProcess.getFlowElements(), result, processInstanceId,
-						completedTaskKeys, currentTaskKeys, tasksByKey);
+				collectAllActivities(
+						subProcess.getFlowElements(),
+						result,
+						processInstanceId,
+						completedTaskKeys,
+						currentTaskKeys,
+						tasksByKey,
+						activitiesByKey
+				);
 			}
 
-			// Recursively handle call activities
+			// -------------------------------
+			// CALL ACTIVITY (recursive)
+			// -------------------------------
 			if (element instanceof CallActivity callActivity) {
+
 				String calledElement = callActivity.getCalledElement();
+
 				if (calledElement != null) {
+
 					BpmnModel subModel = repositoryService.getBpmnModel(calledElement);
+
 					if (subModel != null && subModel.getMainProcess() != null) {
-						collectAllActivities(subModel.getMainProcess().getFlowElements(), result, processInstanceId,
-								completedTaskKeys, currentTaskKeys, tasksByKey);
+
+						collectAllActivities(
+								subModel.getMainProcess().getFlowElements(),
+								result,
+								processInstanceId,
+								completedTaskKeys,
+								currentTaskKeys,
+								tasksByKey,
+								activitiesByKey
+						);
 					}
 				}
 			}
 		}
 	}
-
-
 
 	private IGRPActivityType determineActivityType(FlowElement element) {
 		if (element instanceof UserTask) return IGRPActivityType.USER_TASK;
