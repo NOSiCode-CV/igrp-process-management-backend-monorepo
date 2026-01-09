@@ -1,8 +1,9 @@
 package cv.igrp.framework.runtime.core.engine.activity;
 
-import cv.igrp.framework.runtime.core.engine.activity.model.ProcessActivityInfo;
+
 import cv.igrp.framework.runtime.core.engine.activity.model.ActivityInfo;
 import cv.igrp.framework.runtime.core.engine.activity.model.ActivityVariableInstance;
+import cv.igrp.framework.runtime.core.engine.activity.model.ProcessTimelineEvent;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,6 @@ public interface ActivityQueryService {
 
     List<ActivityInfo> getActiveActivityInstances(String processInstanceId);
 
-    List<ProcessActivityInfo> getActivityProgress(String processInstanceId);
+    List<ProcessTimelineEvent> getActivityTimelineEvents(String processInstanceId);
 
 }

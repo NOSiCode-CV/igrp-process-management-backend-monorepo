@@ -13,7 +13,7 @@
 
     <groupId>cv.igrp.framework</groupId>
     <artifactId>igrp-process-management-backend</artifactId>
-    <version>0.1.0-beta.10</version>
+    <version>0.1.0-beta.11</version>
     <packaging>pom</packaging>
 
     <name>IGRP Process Manager Backend</name>
@@ -22,7 +22,6 @@
     <modules>
         <module>runtime-core</module>
         <module>runtime-activiti</module>
-        <module>runtime-camunda</module>
     </modules>
 
     <properties>
