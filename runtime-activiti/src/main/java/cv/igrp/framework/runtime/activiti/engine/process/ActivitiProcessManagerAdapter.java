@@ -731,7 +731,7 @@ public class ActivitiProcessManagerAdapter implements ProcessManagerAdapter {
 		boolean signaled = false;
 		for (Execution execution : executions) {
 			if (execution.getActivityId() != null) {
-				((RuntimeServiceImpl) this.runtimeService).signal(execution.getId());
+				((RuntimeServiceImpl) this.runtimeService).signal(execution.getId(), processVariables);
 				LOGGER.info("Execution with id: {} at activity {} signaled successfully",
 						execution.getId(), execution.getActivityId());
 				signaled = true;
