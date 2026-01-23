@@ -22,6 +22,7 @@ public class ProcessFilter {
     private Long startedAfter;
     private Long startedBefore;
 	private List<VariablesExpression> variablesExpressions = new ArrayList<>();
+	private List<String> groupsIds = new ArrayList<>();
 
     public Integer getPageNumber() {
         return pageNumber;
@@ -159,6 +160,14 @@ public class ProcessFilter {
 		this.variablesExpressions = variablesExpressions;
 	}
 
+	public List<String> getGroupsIds() {
+		return groupsIds;
+	}
+
+	public void setGroupsIds(List<String> groupsIds) {
+		this.groupsIds = groupsIds;
+	}
+
 	@Override
 	public String toString() {
 		return "ProcessFilter{" +
@@ -179,6 +188,8 @@ public class ProcessFilter {
 				", startedAfter=" + startedAfter +
 				", startedBefore=" + startedBefore +
 				", variablesExpressions=" + variablesExpressions +
+				", groupsIds=" + groupsIds +
 				'}';
 	}
+
 }

@@ -176,6 +176,11 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 			query.processDefinitionTenantId(filter.getApplicationBase());
 		}
 
+		if(!filter.getGroupsIds().isEmpty()){
+			LOGGER.debug("Filtering by groups ids: {}", filter.getGroupsIds());
+			query.startableByGroups(filter.getGroupsIds());
+		}
+
 		var startIndex = ofNullable(filter.getPageNumber()).orElse(0);
 		var maxResults = ofNullable(filter.getPageSize()).orElse(50);
 		LOGGER.debug("Final Pagination: startIndex={}, maxResults={}", startIndex, maxResults);
@@ -224,7 +229,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 	}
 
 	@Override
-	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey) {
+	public String getLastProcessDefinitionIdByKey(String processDefinitionKey) {
 		LOGGER.info("Resolving latest process definition ID for key: {}", processDefinitionKey);
 
 		if (processDefinitionKey == null || processDefinitionKey.isBlank()) {
@@ -281,7 +286,11 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
                 .build();
 	}
 
-
-
+	@Override
+	public void addCandidateStarterGroup(String processDefinitionId, String groupId) {
+		LOGGER.info("Adding candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
+		repositoryService.addCandidateStarterGroup(processDefinitionId, groupId);
+		LOGGER.info("Added candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
+	}
 
 }

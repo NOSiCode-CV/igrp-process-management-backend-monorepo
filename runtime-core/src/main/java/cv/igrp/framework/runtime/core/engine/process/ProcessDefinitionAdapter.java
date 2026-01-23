@@ -70,9 +70,63 @@ public interface ProcessDefinitionAdapter {
 	 */
 	List<ProcessArtifact> getProcessArtifacts(String processDefinitionKey);
 
+	/**
+	 * Retrieves the identifier of the latest deployed version of a process
+	 * definition for the given process definition key.
+	 *
+	 * <p>
+	 * This method is typically used when process definitions are versioned
+	 * and only the most recent version should be used for operations such as
+	 * starting a process instance or managing candidate starters.
+	 * </p>
+	 *
+	 * @param processDefinitionKey
+	 *        the unique key of the process definition
+	 * @return
+	 *        the identifier of the latest process definition associated
+	 *        with the given key, or {@code null} if no definition is found
+	 */
+	String getLastProcessDefinitionIdByKey(String processDefinitionKey);
 
-	public String getLatesProcessDefinitionIdByKey(String processDefinitionKey);
-
+	/**
+	 * Retrieves detailed information about a specific process definition.
+	 *
+	 * <p>
+	 * This method returns a representation of the process definition metadata,
+	 * such as its identifier, key, name, version, deployment information,
+	 * suspension state, and other descriptive attributes.
+	 * </p>
+	 *
+	 * @param processDefinitionId
+	 *        the unique identifier of the process definition
+	 * @return
+	 *        a {@link ProcessDefinitionRepresentation} containing the process
+	 *        definition details, or {@code null} if the process definition
+	 *        does not exist
+	 */
 	ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId);
+
+	/**
+	 * Adds a candidate starter group to the specified process definition.
+	 *
+	 * <p>
+	 * Users belonging to the given group will be allowed to start new
+	 * instances of the process definition. This operation does not modify
+	 * the BPMN model and applies to the process definition metadata only.
+	 * </p>
+	 *
+	 * <p>
+	 * The restriction applies to all future process instances started
+	 * from the specified process definition. Existing process instances
+	 * are not affected.
+	 * </p>
+	 *
+	 * @param processDefinitionId
+	 *        the unique identifier of the process definition
+	 * @param groupId
+	 *        the identifier of the group to be granted permission to start
+	 *        the process
+	 */
+	void addCandidateStarterGroup(String processDefinitionId, String groupId);
 
 }
