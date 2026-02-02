@@ -13,10 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import static java.util.Optional.ofNullable;
@@ -256,7 +258,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 	}
 
 	@Override
-	public ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId) {
+	public Optional<ProcessDefinitionRepresentation> getProcessDefinition(String processDefinitionId) {
 		LOGGER.info("Getting process definition for Id: {}", processDefinitionId);
 
 		if (processDefinitionId == null || processDefinitionId.isBlank()) {
@@ -278,12 +280,29 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 				processDefinition.getName(),
 				processDefinition.getVersion());
 
-        return IgrpProcessDefinitionRepresentation.builder()
-                .key(processDefinition.getKey())
-                .name(processDefinition.getName())
-                .description(processDefinition.getDescription())
-                .version(String.valueOf(processDefinition.getVersion()))
-                .build();
+		String bpmnXml = null;
+		try (InputStream is = repositoryService.getProcessModel(processDefinition.getId())) {
+			if (is == null) {
+				LOGGER.warn("No BPMN model found for processDefinitionId: {}", processDefinitionId);
+			} else {
+				bpmnXml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error reading BPMN XML for processDefinitionId: {}", processDefinitionId, e);
+			throw new ProcessDefinitionException("Failed to read BPMN XML", e);
+		}
+
+        return Optional.of(
+				IgrpProcessDefinitionRepresentation.builder()
+						.key(processDefinition.getKey())
+						.name(processDefinition.getName())
+						.description(processDefinition.getDescription())
+						.version(String.valueOf(processDefinition.getVersion()))
+						.bpmnXml(bpmnXml)
+						.resourceName(processDefinition.getResourceName())
+						.applicationBase(processDefinition.getTenantId())
+						.build()
+		);
 	}
 
 	@Override

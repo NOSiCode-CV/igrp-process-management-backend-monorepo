@@ -104,7 +104,7 @@ public interface ProcessDefinitionAdapter {
 	 *        definition details, or {@code null} if the process definition
 	 *        does not exist
 	 */
-	ProcessDefinitionRepresentation getProcessDefinition(String processDefinitionId);
+	Optional<ProcessDefinitionRepresentation> getProcessDefinition(String processDefinitionId);
 
 	/**
 	 * Adds a candidate starter group to the specified process definition.
@@ -128,5 +128,6 @@ public interface ProcessDefinitionAdapter {
 	 *        the process
 	 */
 	void addCandidateStarterGroup(String processDefinitionId, String groupId);
+
 
 }
