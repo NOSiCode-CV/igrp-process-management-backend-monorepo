@@ -9,6 +9,7 @@ import cv.igrp.framework.runtime.core.engine.process.model.ProcessFilter;
 import cv.igrp.framework.runtime.core.engine.task.model.ProcessArtifact;
 import org.activiti.bpmn.model.UserTask;
 import org.activiti.engine.RepositoryService;
+import org.activiti.engine.task.IdentityLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,7 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static java.util.Optional.ofNullable;
@@ -71,6 +70,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
             var result = IgrpProcessDefinitionRepresentation.builder()
                     .key(processDefinition.getKey())
                     .deploymentId(deployment.getId())
+					.releaseId(processDefinition.getId())
                     .name(processDefinition.getName())
                     .description(processDefinition.getDescription())
                     .version(String.valueOf(processDefinition.getVersion()))
@@ -231,12 +231,12 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 	}
 
 	@Override
-	public String getLastProcessDefinitionIdByKey(String processDefinitionKey) {
+	public Optional<String> getLastProcessDefinitionIdByKey(String processDefinitionKey) {
 		LOGGER.info("Resolving latest process definition ID for key: {}", processDefinitionKey);
 
 		if (processDefinitionKey == null || processDefinitionKey.isBlank()) {
 			LOGGER.warn("Provided processDefinitionKey is null or blank");
-			throw new IllegalArgumentException("processDefinitionKey cannot be null or blank");
+			return Optional.empty();
 		}
 
 		var processDefinition = repositoryService.createProcessDefinitionQuery()
@@ -246,7 +246,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 
 		if (processDefinition == null) {
 			LOGGER.error("No process definition found for key: {}", processDefinitionKey);
-			throw new RuntimeException("No process definition found for key: " + processDefinitionKey);
+			return Optional.empty();
 		}
 
 		LOGGER.info("Found latest process definition. ID: {}, Name: {}, Version: {}",
@@ -254,7 +254,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 				processDefinition.getName(),
 				processDefinition.getVersion());
 
-		return processDefinition.getId();
+		return Optional.of(processDefinition.getId());
 	}
 
 	@Override
@@ -295,6 +295,7 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
         return Optional.of(
 				IgrpProcessDefinitionRepresentation.builder()
 						.key(processDefinition.getKey())
+						.releaseId(processDefinition.getId())
 						.name(processDefinition.getName())
 						.description(processDefinition.getDescription())
 						.version(String.valueOf(processDefinition.getVersion()))
@@ -310,6 +311,41 @@ public class ActivitiProcessDefinitionAdapter implements ProcessDefinitionAdapte
 		LOGGER.info("Adding candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
 		repositoryService.addCandidateStarterGroup(processDefinitionId, groupId);
 		LOGGER.info("Added candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
+	}
+
+	@Override
+	public void removeCandidateStarterGroup(String processDefinitionId, String groupId) {
+		LOGGER.info("Removing candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
+		repositoryService.deleteCandidateStarterGroup(processDefinitionId, groupId);
+		LOGGER.info("Removed candidate starter group '{}' for process definition '{}'", groupId, processDefinitionId);
+	}
+
+	@Override
+	public void suspendProcessDefinitionById(String processDefinitionId) {
+		LOGGER.info("Suspending process definition with id: {}", processDefinitionId);
+		repositoryService.suspendProcessDefinitionById(processDefinitionId, true, new Date());
+		LOGGER.info("Successfully suspended process definition with id: {}", processDefinitionId);
+	}
+
+	@Override
+	public void activateProcessDefinitionById(String processDefinitionId) {
+		LOGGER.info("Activating process definition with id: {}", processDefinitionId);
+		repositoryService.activateProcessDefinitionById(processDefinitionId, true, new Date());
+		LOGGER.info("Successfully activated process definition with id: {}", processDefinitionId);
+	}
+
+	@Override
+	public List<String> getCandidateStarterGroups(String processDefinitionId) {
+		LOGGER.info("Getting candidate starter groups for process definition '{}'", processDefinitionId);
+		List<IdentityLink> links = repositoryService.getIdentityLinksForProcessDefinition(processDefinitionId);
+		List<String> candidateStarterGroups =
+				links.stream()
+						.filter(link -> "candidate".equals(link.getType()))
+						.map(IdentityLink::getGroupId)
+						.filter(Objects::nonNull)
+						.toList();
+		LOGGER.debug("Found candidate starter groups: {}", candidateStarterGroups);
+		return candidateStarterGroups;
 	}
 
 }

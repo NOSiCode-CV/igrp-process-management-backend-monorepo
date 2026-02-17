@@ -186,32 +186,31 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 						.map(HistoricActivityInstance::getActivityId)
 						.collect(Collectors.toSet());
 
-		for (FlowElement element : flowElements) {
+		for (HistoricActivityInstance hai : activities) {
 
-			if (!(element instanceof FlowNode)) continue;
+			String activityId = hai.getActivityId();
 
-			String activityId = element.getId();
+			Instant start = hai.getStartTime() != null
+					? hai.getStartTime().toInstant()
+					: null;
 
-			// Find historic instance if executed
-			HistoricActivityInstance hai = activities.stream()
-					.filter(h -> h.getActivityId().equals(activityId))
-					.findFirst()
-					.orElse(null);
+			Instant end = hai.getEndTime() != null
+					? hai.getEndTime().toInstant()
+					: null;
 
-			Instant start = hai != null && hai.getStartTime() != null ? hai.getStartTime().toInstant() : null;
-			Instant end = hai != null && hai.getEndTime() != null ? hai.getEndTime().toInstant() : null;
 			Instant cutoff = end != null ? end : Instant.now();
 
 			// -------------------------------
 			// Variable SNAPSHOT
 			// -------------------------------
 			Map<String, Object> snapshotVars = new HashMap<>();
+
 			processVars.stream()
 					.filter(v -> v.getCreateTime() != null)
 					.filter(v -> v.getCreateTime().toInstant().isBefore(cutoff))
 					.forEach(v -> snapshotVars.put(v.getVariableName(), v.getValue()));
 
-			if (hai != null && hai.getTaskId() != null) {
+			if (hai.getTaskId() != null) {
 				varsByTaskId.getOrDefault(hai.getTaskId(), List.of())
 						.stream()
 						.filter(v -> v.getCreateTime() != null)
@@ -219,28 +218,56 @@ public class ActivitiActivityQueryService implements ActivityQueryService {
 						.forEach(v -> snapshotVars.put(v.getVariableName(), v.getValue()));
 			}
 
-			HistoricTaskInstance task = hai != null ? tasksById.get(hai.getTaskId()) : null;
+			HistoricTaskInstance task =
+					hai.getTaskId() != null ? tasksById.get(hai.getTaskId()) : null;
 
-			// Inside your timeline building loop
 			timelineEvents.add(new ProcessTimelineEvent(
-					hai != null ? hai.getId() : null,
+					hai.getId(),                 // UNIQUE per execution
 					activityId,
 					resolveActivityName(model, activityId),
 					resolveActivityType(model, activityId),
-					hai != null ? hai.getExecutionId() : null,
-					hai != null ? hai.getTaskId() : null,
+					hai.getExecutionId(),
+					hai.getTaskId(),
 					processInstanceId,
-					hai != null && end != null ? IGRPActivityStatus.COMPLETED :
-							hai != null ? IGRPActivityStatus.CURRENT : IGRPActivityStatus.PENDING,
+					hai.getEndTime() != null
+							? IGRPActivityStatus.COMPLETED
+							: IGRPActivityStatus.CURRENT,
 					start,
 					end,
-					hai != null ? hai.getDurationInMillis() : null,
+					hai.getDurationInMillis(),
 					task != null ? task.getAssignee() : null,
 					snapshotVars,
-					treeNumbers.get(activityId) // set treeNumber here
+					treeNumbers.get(activityId)
 			));
+		}
 
+		for (FlowElement element : model.getMainProcess().getFlowElements()) {
 
+			if (!(element instanceof FlowNode)) continue;
+
+			String activityId = element.getId();
+
+			// Already executed at least once → skip
+			if (executedActivityIds.contains(activityId)) {
+				continue;
+			}
+
+			timelineEvents.add(new ProcessTimelineEvent(
+					null,
+					activityId,
+					resolveActivityName(model, activityId),
+					resolveActivityType(model, activityId),
+					null,
+					null,
+					processInstanceId,
+					IGRPActivityStatus.PENDING,
+					null,
+					null,
+					null,
+					null,
+					Map.of(),
+					treeNumbers.get(activityId)
+			));
 		}
 
 		return timelineEvents;

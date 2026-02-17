@@ -86,7 +86,7 @@ public interface ProcessDefinitionAdapter {
 	 *        the identifier of the latest process definition associated
 	 *        with the given key, or {@code null} if no definition is found
 	 */
-	String getLastProcessDefinitionIdByKey(String processDefinitionKey);
+	Optional<String> getLastProcessDefinitionIdByKey(String processDefinitionKey);
 
 	/**
 	 * Retrieves detailed information about a specific process definition.
@@ -129,5 +129,50 @@ public interface ProcessDefinitionAdapter {
 	 */
 	void addCandidateStarterGroup(String processDefinitionId, String groupId);
 
+	/**
+	 * Removes the specified candidate starter group from the given process definition.
+	 *
+	 * This operation revokes the permission of the group to start new instances of the
+	 * process definition. It does not affect the BPMN model or any existing process
+	 * instances initiated by members of the group.
+	 *
+	 * @param processDefinitionId the unique identifier of the process definition
+	 *                            from which the group will be removed
+	 * @param groupId the identifier of the group to be removed as a candidate starter
+	 */
+	void removeCandidateStarterGroup(String processDefinitionId, String groupId);
 
+	/**
+	 * Suspends the specified process definition by its unique identifier.
+	 *
+	 * This method updates the state of the process definition to suspended,
+	 * preventing new process instances from being started based on it,
+	 * although existing instances will remain active.
+	 *
+	 * @param processDefinitionId the unique identifier of the process definition to be suspended
+	 */
+	void suspendProcessDefinitionById(String processDefinitionId);
+
+	/**
+	 * Activates the specified process definition by its unique identifier.
+	 *
+	 * Activating a process definition allows new process instances to be started
+	 * based on it. This operation restores the ability to use the process for
+	 * initiating workflows if it was previously suspended.
+	 *
+	 * @param processDefinitionId the unique identifier of the process definition
+	 *                            to be activated
+	 */
+	void activateProcessDefinitionById(String processDefinitionId);
+
+	/**
+	 * Retrieves the list of candidate starter groups for a specific process definition.
+	 *
+	 * This method provides the identifiers of groups that are authorized to start new
+	 * instances of the specified process definition.
+	 *
+	 * @param processDefinitionId the unique identifier of the process definition
+	 * @return a list of group identifiers that are allowed to start the process
+	 */
+	List<String> getCandidateStarterGroups(String processDefinitionId);
 }
