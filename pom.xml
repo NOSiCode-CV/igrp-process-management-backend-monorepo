@@ -13,16 +13,17 @@
 
     <groupId>cv.igrp.framework</groupId>
     <artifactId>igrp-process-management-backend</artifactId>
-    <version>0.1.0-beta.6</version>
+    <version>0.1.0-beta.20</version>
     <packaging>pom</packaging>
 
     <name>IGRP Process Manager Backend</name>
     <description>IGRP Process Management Backend — Runtime engine for BPMN process execution</description>
 
     <modules>
-        <module>runtime-core</module>
-        <module>runtime-activiti</module>
-        <module>runtime-camunda</module>
+        <module>process-runtime-core</module>
+        <module>process-runtime-activiti</module>
+        <module>process-runtime-auth-core</module>
+        <module>process-runtime-auth-igrp</module>
     </modules>
 
     <properties>
@@ -39,13 +40,13 @@
 
             <dependency>
                 <groupId>cv.igrp.framework</groupId>
-                <artifactId>runtime-core</artifactId>
+                <artifactId>process-runtime-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>cv.igrp.framework</groupId>
-                <artifactId>runtime-activiti</artifactId>
+                <artifactId>process-runtime-activiti</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -55,11 +56,25 @@
                 <scope>test</scope>
             </dependency>
 
+            <dependency>
+                <groupId>cv.igrp.framework</groupId>
+                <artifactId>process-runtime-auth-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
 
     </dependencyManagement>
 
     <repositories>
+        <repository>
+            <id>igrp-framework-releases</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+        </repository>
+        <repository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </repository>
         <repository>
             <id>activiti-releases</id>
             <url>https://artifacts.alfresco.com/nexus/repository/activiti-releases/</url>
