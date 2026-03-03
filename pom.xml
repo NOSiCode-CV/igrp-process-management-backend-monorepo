@@ -24,6 +24,7 @@
         <module>process-runtime-activiti</module>
         <module>process-runtime-auth-core</module>
         <module>process-runtime-auth-igrp</module>
+        <module>process-runtime-auth-irn</module>
     </modules>
 
     <properties>
