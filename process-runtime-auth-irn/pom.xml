@@ -6,7 +6,7 @@
     <parent>
         <groupId>cv.igrp.framework</groupId>
         <artifactId>igrp-process-management-backend</artifactId>
-        <version>0.1.0-beta.20</version>
+        <version>0.1.0-beta.21</version>
     </parent>
 
     <artifactId>process-runtime-auth-irn</artifactId>
@@ -44,6 +44,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Spring Web for RestClient -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Spring Cache abstraction -->

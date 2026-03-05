@@ -17,11 +17,11 @@ public class IrnAuthClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IrnAuthClient.class);
     private final RestClient restClient;
-    private final String sessionCookieName;
+    private final IrnApiProperties properties;
 
-    public IrnAuthClient(RestClient irnRestClient, IrnApiProperties properties) {
-        this.restClient = irnRestClient;
-        this.sessionCookieName = properties.sessionCookieName();
+    public IrnAuthClient(RestClient restClient, IrnApiProperties properties) {
+        this.restClient = restClient;
+        this.properties = properties;
     }
 
     /**
@@ -38,8 +38,8 @@ public class IrnAuthClient {
 
         try {
             return restClient.get()
-                    .uri("/api/v1/Auth/me")
-                    .header("Cookie", sessionCookieName + "=" + sessionId)
+                    .uri(properties.getMeEndpoint())
+                    .header("Cookie", properties.sessionCookieName() + "=" + sessionId)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                         LOGGER.error("Client error from IRN API: {} - {}", response.getStatusCode(), response.getStatusText());

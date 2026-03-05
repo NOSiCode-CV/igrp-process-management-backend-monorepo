@@ -149,16 +149,16 @@ public class IrnAuthorizationCacheService {
         //     response.userSpaces() == null ? Stream.empty()
         //         : response.userSpaces().stream()
         //             .flatMap(space -> Stream.concat(
-        //                 Stream.ofNullable(space.profileId()),
+        //                 Stream.ofNullable(space.profileCode()),
         //                 space.profiles() == null
         //                     ? Stream.empty()
         //                     : space.profiles().stream()
-        //                         .map(Profile::profileId)
+        //                         .map(Profile::profileCode)
         //             ));
 
         Stream<String> selectedProfile =
                 response.selectedProfile() != null
-                        ? Stream.ofNullable(response.selectedProfile().profileId())
+                        ? Stream.ofNullable(response.selectedProfile().profileCode())
                         : Stream.empty();
 
         return selectedProfile
