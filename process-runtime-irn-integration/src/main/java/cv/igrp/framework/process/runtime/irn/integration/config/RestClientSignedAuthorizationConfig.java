@@ -11,6 +11,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
@@ -29,6 +30,12 @@ public class RestClientSignedAuthorizationConfig {
     }
 
     @Bean
+    public JwtTokenService jwtTokenService(JwtSigner jwtSigner,
+                                           @Value("${igrp.authorization.jwt.key:default}") String jwtKey) {
+        return new JwtTokenService(jwtSigner, jwtKey);
+    }
+
+    @Bean
     public RestClient restClient(JwtTokenService jwtTokenService) {
         return RestClient.builder()
                 .requestInterceptor(new JwtAuthorizationInterceptor(jwtTokenService))
@@ -37,18 +44,14 @@ public class RestClientSignedAuthorizationConfig {
 
     /**
      * Interceptor that injects cached JWT tokens into request headers.
-     * Token generation and caching is handled by {@link JwtTokenService}.
+     * Token generation and caching are handled by {@link JwtTokenService}.
      */
-    private static class JwtAuthorizationInterceptor implements ClientHttpRequestInterceptor {
+    private record JwtAuthorizationInterceptor(
+            JwtTokenService jwtTokenService) implements ClientHttpRequestInterceptor {
 
-        private final JwtTokenService jwtTokenService;
-
-        public JwtAuthorizationInterceptor(JwtTokenService jwtTokenService) {
-            this.jwtTokenService = jwtTokenService;
-        }
-
+        @NonNull
         @Override
-        public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+        public ClientHttpResponse intercept(HttpRequest request, @NonNull byte[] body, ClientHttpRequestExecution execution) throws IOException {
             String token = jwtTokenService.generateToken();
             request.getHeaders().setBearerAuth(token);
             return execution.execute(request, body);

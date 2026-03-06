@@ -1,9 +1,7 @@
 package cv.igrp.framework.process.runtime.irn.integration.service;
 
 import cv.igrp.framework.process.runtime.irn.integration.config.security.JwtSigner;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,15 +9,14 @@ import java.util.Map;
 /**
  * Service for generating and caching JWT tokens.
  * Tokens are cached based on time windows to ensure automatic refresh before expiration.
+ * This service is configured as a bean in RestClientSignedAuthorizationConfig.
  */
-@Service
 public class JwtTokenService {
 
     private final JwtSigner jwtSigner;
     private final String jwtKey;
 
-    public JwtTokenService(JwtSigner jwtSigner,
-                          @Value("${igrp.authorization.jwt.key:default}") String jwtKey) {
+    public JwtTokenService(JwtSigner jwtSigner, String jwtKey) {
         this.jwtSigner = jwtSigner;
         this.jwtKey = jwtKey;
     }
