@@ -28,7 +28,7 @@ public class JwtSigner {
     }
 
     /**
-     * Loads PKCS#1 RSA private key from PEM using BouncyCastle
+     * Loads a PKCS#1 RSA private key from PEM using BouncyCastle
      */
     private PrivateKey loadPrivateKey() {
         try (PemReader reader = new PemReader(new InputStreamReader(privateKeyResource.getInputStream()))) {
@@ -56,7 +56,7 @@ public class JwtSigner {
     }
 
     /**
-     * Generate RS256 signed JWT token with given payload
+     * Generate RS256 signed JWT token with the given payload
      */
     public String generateRS256Token(Map<String, Object> payload) {
         return Jwts.builder()

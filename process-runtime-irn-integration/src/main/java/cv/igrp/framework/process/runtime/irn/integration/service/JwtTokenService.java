@@ -33,7 +33,7 @@ public class JwtTokenService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("key", jwtKey);
 
-        // Add expiration to payload (1 hour TTL)
+        // Add expiration to payload (1-hour TTL)
         long ttl = (System.currentTimeMillis() / 1000L) + 60 * 60;
         payload.put("exp", ttl);
 
@@ -47,7 +47,7 @@ public class JwtTokenService {
      * @return the current time window identifier
      */
     public long getTimeWindow() {
-        // 55 minutes in milliseconds = 55 * 60 * 1000 = 3300000
+        // 55 minutes in milliseconds = 55 * 60 * 1000 = 3,300,000
         return System.currentTimeMillis() / 3300000L;
     }
 }
