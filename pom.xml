@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>cv.igrp.framework</groupId>
+    <artifactId>igrp-process-management-backend</artifactId>
+    <version>0.1.0-beta.20</version>
+    <packaging>pom</packaging>
+
+    <name>IGRP Process Manager Backend</name>
+    <description>IGRP Process Management Backend — Runtime engine for BPMN process execution</description>
+
+    <modules>
+        <module>process-runtime-core</module>
+        <module>process-runtime-activiti</module>
+        <module>process-runtime-auth-core</module>
+        <module>process-runtime-auth-igrp</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <igrp.encoding>UTF-8</igrp.encoding>
+        <project.build.sourceEncoding>${igrp.encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${igrp.encoding}</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>cv.igrp.framework</groupId>
+                <artifactId>process-runtime-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cv.igrp.framework</groupId>
+                <artifactId>process-runtime-activiti</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>cv.igrp.framework</groupId>
+                <artifactId>process-runtime-auth-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>igrp-framework-releases</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+        </repository>
+        <repository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </repository>
+        <repository>
+            <id>activiti-releases</id>
+            <url>https://artifacts.alfresco.com/nexus/repository/activiti-releases/</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>igrp-framework-releases</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <!-- Exclude integration tests by default -->
+                    <excludedGroups>integration</excludedGroups>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+</project>
