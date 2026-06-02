@@ -20,7 +20,7 @@ This module provides authentication and authorization through the IRN API. It va
 <dependency>
     <groupId>cv.igrp.framework</groupId>
     <artifactId>process-runtime-auth-irn</artifactId>
-    <version>0.1.0-beta.22</version>
+    <version>0.1.0-beta.23</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ This module provides JWT token generation and signing for secure communication w
 <dependency>
     <groupId>cv.igrp.framework</groupId>
     <artifactId>process-runtime-irn-integration</artifactId>
-    <version>0.1.0-beta.22</version>
+    <version>0.1.0-beta.23</version>
 </dependency>
 ```
 
@@ -189,7 +189,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: igrp-process-management-backend:0.1.0-beta.22
+        image: igrp-process-management-backend:0.1.0-beta.23
         envFrom:
         - configMapRef:
             name: igrp-irn-config
@@ -405,19 +405,19 @@ For issues or questions, please contact the development team or open an issue in
 
 ---
 
-**Version:** 0.1.0-beta.22
+**Version:** 0.1.0-beta.23
 **Last Updated:** 2026-03-05
 
 ```
 <dependency>
    <groupId>cv.igrp.framework</groupId>
    <artifactId>process-runtime-irn-integration</artifactId>
-   <version>0.1.0-beta.22</version>
+   <version>0.1.0-beta.23</version>
 </dependency>
 
 <dependency>
    <groupId>cv.igrp.framework</groupId>
    <artifactId>process-runtime-auth-irn</artifactId>
-   <version>0.1.0-beta.22</version>
+   <version>0.1.0-beta.23</version>
 </dependency>
 ```
