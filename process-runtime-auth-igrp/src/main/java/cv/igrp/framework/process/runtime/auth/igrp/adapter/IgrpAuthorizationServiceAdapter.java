@@ -1,197 +1,190 @@
 package cv.igrp.framework.process.runtime.auth.igrp.adapter;
 
-
 import cv.igrp.framework.process.runtime.auth.core.adapter.IAuthorizationServiceAdapter;
-import cv.igrp.platform.access.client.ApiClient;
-import cv.igrp.platform.access.client.api.DepartmentsApi;
-import cv.igrp.platform.access.client.api.UsersApi;
-import cv.igrp.platform.access.client.model.*;
+import cv.igrp.framework.process.runtime.auth.igrp.constants.Claim;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import java.util.stream.Stream;
 
 @Component
 @ConditionalOnProperty(
 		name = "igrp.authorization.service.adapter",
 		havingValue = "igrp"
 )
-public class IgrpAuthorizationServiceAdapter implements IAuthorizationServiceAdapter {
+public class IgrpAuthorizationServiceAdapter
+		implements IAuthorizationServiceAdapter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(IgrpAuthorizationServiceAdapter.class);
+	private static final Logger LOGGER =
+			LoggerFactory.getLogger(IgrpAuthorizationServiceAdapter.class);
 
-	private final ApiClient client;
+	private final JwtDecoder jwtDecoder;
 
-	public IgrpAuthorizationServiceAdapter(ApiClient client) {
-		this.client = client;
+	public IgrpAuthorizationServiceAdapter(JwtDecoder jwtDecoder) {
+		this.jwtDecoder = jwtDecoder;
 	}
 
-	@Override
-	@Cacheable(value = "rolesCache", key = "#jwt", unless = "#result.isEmpty()")
-	public Set<String> getRoles(String jwt, HttpServletRequest request) {
-		try {
+	private Jwt decode(String token) {
 
-			LOGGER.debug("Getting roles for current user");
-
-			client.setAuthToken(jwt);
-
-			var usersApi = new UsersApi(client);
-
-			List<RoleDTO> currentUserRoles = usersApi.getCurrentUserRoles();
-			LOGGER.debug("Current User Roles: {}", currentUserRoles);
-
-			Set<String> roles = currentUserRoles.stream()
-					.map(roleDTO -> normalizeRoleCode(roleDTO.getDepartmentCode(), roleDTO.getCode()))
-					.collect(Collectors.toSet());
-
-			// Descendant roles
-			currentUserRoles.forEach(role -> roles.addAll(getDescendantRoles(role.getDepartmentCode(), role.getCode())));
-
-			return roles;
-
-		} catch (Exception e) {
-			LOGGER.error("Error getting roles for current user", e);
-			return Set.of();
-		}
-
-	}
-
-	private String normalizeRoleCode(String departmentCode, String roleCode) {
-		if (departmentCode == null) {
-			LOGGER.warn("Role {} has no department code", roleCode);
-			return roleCode;
-		}
-		String prefix = departmentCode + ".";
-		return roleCode.startsWith(prefix) ? roleCode : prefix + roleCode;
-	}
-
-	private Set<String> getDescendantRoles(String departmentCode, String roleCode) {
-		Set<String> descendantRoles = new HashSet<>();
-		try {
-			var departmentsApi = new DepartmentsApi(client);
-			RoleChildHierarchyDTO roleChildHierarchyDTO = departmentsApi.getRoleChildren(
-					departmentCode,
-					roleCode,
-					null
+		if (token == null || token.isBlank()) {
+			throw new IllegalArgumentException(
+					"JWT token cannot be null or blank"
 			);
-			LOGGER.debug("Role Children: {}", roleChildHierarchyDTO);
-			if (roleChildHierarchyDTO != null && roleChildHierarchyDTO.getChildren() != null) {
-				roleChildHierarchyDTO.getChildren()
-						.forEach(childRole ->
-								descendantRoles.add(normalizeRoleCode(childRole.getDepartmentCode(), childRole.getRoleCode())));
-			}
-		} catch (Exception e) {
-			LOGGER.error("Error getting role children for role {}", roleCode, e);
 		}
-		return descendantRoles;
+
+		return jwtDecoder.decode(token);
+	}
+
+	private Set<String> getStringSetClaim(Jwt token, Claim claim) {
+
+		Object value = token.getClaim(claim.value());
+
+		if (value instanceof Collection<?> values) {
+
+			return values.stream()
+					.filter(String.class::isInstance)
+					.map(String.class::cast)
+					.collect(Collectors.toUnmodifiableSet());
+		}
+
+		if (value instanceof String stringValue
+				&& !stringValue.isBlank()) {
+
+			return Set.of(stringValue);
+		}
+
+		return Set.of();
+	}
+
+	private Stream<String> getStringClaim(Jwt token, Claim claim) {
+
+		String value = token.getClaimAsString(claim.value());
+
+		return value == null || value.isBlank()
+				? Stream.empty()
+				: Stream.of(value);
 	}
 
 	@Override
-	@Cacheable(value = "permissionsCache", key = "#jwt", unless = "#result.isEmpty()")
-	public Set<String> getPermissions(String jwt, HttpServletRequest request) {
+	@Cacheable(
+			value = "authorization-groups-cache",
+			key = "#jwt",
+			unless = "#result.isEmpty()"
+	)
+	public Set<String> getGroups(
+			String jwt,
+			HttpServletRequest request
+	) {
+
 		try {
 
-			LOGGER.debug("Getting permissions for current user");
+			LOGGER.debug("Extracting groups from JWT");
 
-			client.setAuthToken(jwt);
+			Jwt token = decode(jwt);
 
-			var usersApi = new UsersApi(client);
-
-			List<PermissionDTO> permissions = usersApi.getCurrentUserPermissions(null);
-			LOGGER.debug("Permissions: {}", permissions);
-
-			return permissions.stream()
-					.map(PermissionDTO::getName)
-					.collect(Collectors.toSet());
+			return getStringSetClaim(token, Claim.ROLES);
 
 		} catch (Exception e) {
-			LOGGER.error("Error getting permissions for current user", e);
+
+			LOGGER.error("Error extracting groups from JWT", e);
+
 			return Set.of();
 		}
-
 	}
 
 	@Override
-	@Cacheable(value = "departmentsCache", key = "#jwt", unless = "#result.isEmpty()")
-	public Set<String> getDepartments(String jwt, HttpServletRequest request) {
+	@Cacheable(
+			value = "authorization-active-groups-cache",
+			key = "#jwt",
+			unless = "#result.isEmpty()"
+	)
+	public Set<String> getActiveGroups(
+			String jwt,
+			HttpServletRequest request
+	) {
+
 		try {
 
-			LOGGER.debug("Getting departments for current user");
+			LOGGER.debug("Extracting active groups from JWT");
 
-			client.setAuthToken(jwt);
+			Jwt token = decode(jwt);
 
-			var usersApi = new UsersApi(client);
-
-			List<DepartmentDTO> departments = usersApi.getCurrentUserDepartments();
-			LOGGER.debug("Departments: {}", departments);
-
-			return departments.stream()
-					.map(DepartmentDTO::getCode)
-					.collect(Collectors.toSet());
+			return Stream.concat(
+							getStringClaim(token, Claim.SELECTED_ROLE),
+							getStringClaim(token, Claim.SELECTED_ORG)
+					)
+					.collect(Collectors.toUnmodifiableSet());
 
 		} catch (Exception e) {
-			LOGGER.error("Error getting departments for current user", e);
+
+			LOGGER.error("Error extracting active groups from JWT", e);
+
 			return Set.of();
 		}
-
 	}
 
 	@Override
-	@Cacheable(value = "superAdminCache", key = "#jwt")
-	public boolean isSuperAdmin(String jwt, HttpServletRequest request) {
+	@Cacheable(
+			value = "authorization-permissions-cache",
+			key = "#jwt",
+			unless = "#result.isEmpty()"
+	)
+	public Set<String> getPermissions(
+			String jwt,
+			HttpServletRequest request
+	) {
+
 		try {
 
-			LOGGER.debug("Checking if current user is super admin");
+			LOGGER.debug("Extracting permissions from JWT");
 
-			client.setAuthToken(jwt);
-			var usersApi = new UsersApi(client);
-			boolean isSuperAdmin = usersApi.isSuperadmin();
+			Jwt token = decode(jwt);
 
-			LOGGER.debug("Current user is super admin: {}", isSuperAdmin);
-
-			return isSuperAdmin;
+			return getStringSetClaim(token, Claim.PERMISSIONS);
 
 		} catch (Exception e) {
-			LOGGER.error("Error checking if current user is super admin", e);
+
+			LOGGER.error("Error extracting permissions from JWT", e);
+
+			return Set.of();
 		}
-		return false;
 	}
 
 	@Override
-	@Cacheable(value = "activeRoleCache", key = "#jwt")
-	public Set<String> getActiveRoles(String jwt, HttpServletRequest request) {
-
-		LOGGER.debug("Get active roles for current user");
-
-		Set<String> roles = new HashSet<>();
+	@Cacheable(value = "authorization-super-admin-cache", key = "#jwt")
+	public boolean isSuperAdmin(
+			String jwt,
+			HttpServletRequest request
+	) {
 
 		try {
 
-			client.setAuthToken(jwt);
-			var usersApi = new UsersApi(client);
-			RoleDepartmentDTO currentRole = usersApi.getCurrentUserActiveRole();
+			LOGGER.debug("Checking super admin from JWT");
 
-			LOGGER.debug("Current active role: {}", currentRole);
+			Jwt token = decode(jwt);
 
-			if (currentRole != null) {
-				roles.add(normalizeRoleCode(currentRole.getDepartmentCode(), currentRole.getRoleCode()));
-				// Descendant roles
-				roles.addAll(getDescendantRoles(currentRole.getDepartmentCode(), currentRole.getRoleCode()));
-			}
+			Boolean superAdmin =
+					token.getClaim(
+							Claim.IS_SUPER_ADMIN.value()
+					);
+
+			return Boolean.TRUE.equals(superAdmin);
 
 		} catch (Exception e) {
-			LOGGER.error("Error getting active roles for current user", e);
-		}
 
-		return roles;
+			LOGGER.error("Error checking super admin from JWT", e);
+
+			return false;
+		}
 	}
 
 }
