@@ -13,7 +13,7 @@
 
     <groupId>cv.igrp.framework</groupId>
     <artifactId>igrp-process-management-backend</artifactId>
-    <version>0.1.0-beta.21</version>
+    <version>0.1.0-beta.22</version>
     <packaging>pom</packaging>
 
     <name>IGRP Process Manager Backend</name>
@@ -24,6 +24,8 @@
         <module>process-runtime-activiti</module>
         <module>process-runtime-auth-core</module>
         <module>process-runtime-auth-igrp</module>
+        <module>process-runtime-auth-irn</module>
+        <module>process-runtime-irn-integration</module>
     </modules>
 
     <properties>

@@ -3,21 +3,26 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>cv.igrp.framework</groupId>
         <artifactId>igrp-process-management-backend</artifactId>
         <version>0.1.0-beta.22</version>
     </parent>
 
-    <artifactId>process-runtime-auth-core</artifactId>
+    <artifactId>process-runtime-auth-irn</artifactId>
 
     <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>process-runtime-auth-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -41,9 +46,16 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Web for RestClient -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-oauth2-jose</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Cache abstraction -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
     </dependencies>
