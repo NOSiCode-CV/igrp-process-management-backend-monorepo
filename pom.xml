@@ -20,6 +20,7 @@
     <description>IGRP Process Management Backend — Runtime engine for BPMN process execution</description>
 
     <modules>
+        <module>process-runtime-bom</module>
         <module>process-runtime-core</module>
         <module>process-runtime-activiti</module>
         <module>process-runtime-auth-core</module>
