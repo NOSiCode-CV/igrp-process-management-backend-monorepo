@@ -37,16 +37,6 @@
                 <artifactId>process-runtime-auth-igrp</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>cv.igrp.framework</groupId>
-                <artifactId>process-runtime-auth-irn</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cv.igrp.framework</groupId>
-                <artifactId>process-runtime-irn-integration</artifactId>
-                <version>${project.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
