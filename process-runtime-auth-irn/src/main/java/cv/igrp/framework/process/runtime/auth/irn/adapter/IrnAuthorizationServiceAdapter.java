@@ -29,18 +29,20 @@ public class IrnAuthorizationServiceAdapter implements IAuthorizationServiceAdap
 		this.sessionCookieName = properties.sessionCookieName();
 	}
 
+
+
 	/**
-	 * Retrieves the roles for the current user from the IRN API.
+	 * Retrieves the roles/space information for the current user from the IRN API.
 	 * Results are cached based on the session ID.
 	 *
 	 * @param jwt the JWT token (not currently used in IRN implementation)
 	 * @param request the HTTP request containing the session ID cookie
-	 * @return set of role identifiers, or empty set if roles cannot be retrieved
+	 * @return set of role/space identifiers, or empty set if roles cannot be retrieved
 	 */
 	@Override
-	public Set<String> getRoles(String jwt, HttpServletRequest request) {
+	public Set<String> getGroups(String jwt, HttpServletRequest request) {
 		String sessionId = extractSessionId(request);
-		return cacheService.getRoles(sessionId);
+        return cacheService.getGroups(sessionId);
 	}
 
 	/**
@@ -58,20 +60,6 @@ public class IrnAuthorizationServiceAdapter implements IAuthorizationServiceAdap
 	}
 
 	/**
-	 * Retrieves department/space information for the current user from the IRN API.
-	 * Returns space-related identifiers from the user's selected space.
-	 *
-	 * @param jwt the JWT token (not currently used in IRN implementation)
-	 * @param request the HTTP request containing the session ID cookie
-	 * @return set of department/space identifiers, or empty set if not available
-	 */
-	@Override
-	public Set<String> getDepartments(String jwt, HttpServletRequest request) {
-		String sessionId = extractSessionId(request);
-		return cacheService.getDepartments(sessionId);
-	}
-
-	/**
 	 * Checks if the current user is a super admin.
 	 * Super admin status is determined by comparing the user's email with the configured super admin email.
 	 *
@@ -84,19 +72,18 @@ public class IrnAuthorizationServiceAdapter implements IAuthorizationServiceAdap
 		String sessionId = extractSessionId(request);
 		return cacheService.isSuperAdmin(sessionId);
 	}
-
 	/**
 	 * Retrieves the active roles for the current user.
 	 * In the IRN implementation, active roles are the same as regular roles.
 	 *
 	 * @param jwt the JWT token (not currently used in IRN implementation)
 	 * @param request the HTTP request containing the session ID cookie
-	 * @return set of active role identifiers (same as getRoles)
+	 * @return set of active role/spaces identifiers (same as getRoles)
 	 */
 	@Override
-	public Set<String> getActiveRoles(String jwt, HttpServletRequest request) {
-		// Active roles are the same as regular roles in IRN implementation
-		return getRoles(jwt, request);
+	public Set<String> getActiveGroups(String jwt, HttpServletRequest request) {
+		// Active roles/spaces are the same as regular roles in IRN implementation
+		return getGroups(jwt, request);
 	}
 
 	/**

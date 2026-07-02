@@ -4,6 +4,8 @@ import cv.igrp.framework.process.runtime.irn.integration.config.security.JwtSign
 import cv.igrp.framework.process.runtime.irn.integration.service.JwtTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -15,6 +17,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
+import java.time.Duration;
 
 /**
  * RestClient configuration that automatically signs a JWT token
@@ -36,8 +39,17 @@ public class RestClientSignedAuthorizationConfig {
     }
 
     @Bean
-    public RestClient restClient(JwtTokenService jwtTokenService) {
+    public RestClient restClient(
+            JwtTokenService jwtTokenService,
+            @Value("${igrp.restclient.connect-timeout:5s}") Duration connectTimeout,
+            @Value("${igrp.restclient.read-timeout:10s}") Duration readTimeout) {
+        // Bound the previously infinite connect/read timeouts so a slow downstream service
+        // cannot hold a process-engine worker thread (and its DB connection) indefinitely.
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
+                .withConnectTimeout(connectTimeout)
+                .withReadTimeout(readTimeout);
         return RestClient.builder()
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .requestInterceptor(new JwtAuthorizationInterceptor(jwtTokenService))
                 .build();
     }

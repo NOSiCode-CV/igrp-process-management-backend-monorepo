@@ -29,8 +29,8 @@ public class IrnAuthorizationCacheService {
         this.superAdminEmail = properties.superAdminEmail();
     }
 
-    @Cacheable(value = "rolesCache", key = "#sessionId", unless = "#result.isEmpty()")
-    public Set<String> getRoles(String sessionId) {
+    @Cacheable(value = "groupsCache", key = "#sessionId", unless = "#result.isEmpty()")
+    public Set<String> getGroups(String sessionId) {
         try {
             LOGGER.debug("Getting roles for current user with sessionId: {}", sessionId);
 
@@ -44,7 +44,15 @@ public class IrnAuthorizationCacheService {
 
             LOGGER.debug("Current User Roles: {}", roles);
 
-            return roles;
+            Set<String> groups = new HashSet<>(roles);
+
+            Set<String> departments = new HashSet<>(extractSelectedSpaceData(irnMeResponse));
+
+            LOGGER.debug("Departments: {}", departments);
+
+            groups.addAll(departments);
+
+            return groups;
 
         } catch (Exception e) {
             LOGGER.error("Error getting roles for current user", e);
@@ -72,29 +80,6 @@ public class IrnAuthorizationCacheService {
 
         } catch (Exception e) {
             LOGGER.error("Error getting permissions for current user", e);
-            return Set.of();
-        }
-    }
-
-    @Cacheable(value = "departmentsCache", key = "#sessionId", unless = "#result.isEmpty()")
-    public Set<String> getDepartments(String sessionId) {
-        try {
-            LOGGER.debug("Getting departments for current user with sessionId: {}", sessionId);
-
-            if (sessionId == null || sessionId.isBlank()) {
-                LOGGER.warn("getDepartments: Session ID is null or empty");
-                return Set.of();
-            }
-
-            var irnMeResponse = client.getMe(sessionId);
-            Set<String> departments = new HashSet<>(extractSelectedSpaceData(irnMeResponse));
-
-            LOGGER.debug("Departments: {}", departments);
-
-            return departments;
-
-        } catch (Exception e) {
-            LOGGER.error("Error getting departments for current user", e);
             return Set.of();
         }
     }
