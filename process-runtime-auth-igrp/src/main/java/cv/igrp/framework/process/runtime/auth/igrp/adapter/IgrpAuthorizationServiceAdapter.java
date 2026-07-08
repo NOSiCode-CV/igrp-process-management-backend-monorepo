@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component
+@Component("igrpProcessAuthorizationServiceAdapter")
 @ConditionalOnProperty(
 		name = "igrp.authorization.service.adapter",
 		havingValue = "igrp"
