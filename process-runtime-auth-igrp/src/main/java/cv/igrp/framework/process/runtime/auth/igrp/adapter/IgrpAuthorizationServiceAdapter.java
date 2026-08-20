@@ -65,13 +65,23 @@ public class IgrpAuthorizationServiceAdapter
 		return Set.of();
 	}
 
-	private Stream<String> getStringClaim(Jwt token, Claim claim) {
+	private String getStringClaim(Jwt token, Claim claim) {
 
 		String value = token.getClaimAsString(claim.value());
 
 		return value == null || value.isBlank()
-				? Stream.empty()
-				: Stream.of(value);
+				? null
+				: value;
+	}
+
+	private String joinSelectedOrgAndRole(
+			String selectedOrg,
+			String selectedRole
+	) {
+
+		return selectedOrg == null || selectedRole == null
+				? null
+				: selectedOrg + "." + selectedRole;
 	}
 
 	@Override
@@ -118,10 +128,15 @@ public class IgrpAuthorizationServiceAdapter
 
 			Jwt token = decode(jwt);
 
-			return Stream.concat(
-							getStringClaim(token, Claim.SELECTED_ROLE),
-							getStringClaim(token, Claim.SELECTED_ORG)
+			String selectedRole = getStringClaim(token, Claim.SELECTED_ROLE);
+			String selectedOrg = getStringClaim(token, Claim.SELECTED_ORG);
+
+			return Stream.of(
+							selectedRole,
+							selectedOrg,
+							joinSelectedOrgAndRole(selectedOrg, selectedRole)
 					)
+					.filter(value -> value != null && !value.isBlank())
 					.collect(Collectors.toUnmodifiableSet());
 
 		} catch (Exception e) {
